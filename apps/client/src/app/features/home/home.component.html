@@ -1,0 +1,121 @@
+<section class="home">
+  <header class="hero">
+    <h1 class="hero-title">Choose your <em>poison</em>.</h1>
+    <p class="hero-sub">Six games, no accounts. Pick one to set it up.</p>
+  </header>
+
+  <nav class="bento" aria-label="Games">
+    @for (game of games; track game.mode; let index = $index) {
+      <a
+        class="tile"
+        appSpotlight
+        [routerLink]="['/play', game.mode]"
+        [attr.data-game]="game.mode"
+        [style.--enter-delay]="index * 50 + 'ms'"
+      >
+        <div class="visual" aria-hidden="true">
+          @switch (game.mode) {
+            @case ('x01') {
+              <div class="x01-visual">
+                <div class="x01-window">
+                  <div class="x01-reel">
+                    @for (step of x01Leg; track step.remaining) {
+                      <span>{{ step.remaining }}</span>
+                    }
+                  </div>
+                </div>
+                <div class="x01-throws">
+                  @for (step of x01Leg.slice(1); track step.thrown; let throwIndex = $index) {
+                    <span class="x01-throw" [style.--throw]="throwIndex">{{ step.thrown }}</span>
+                  }
+                </div>
+              </div>
+            }
+            @case ('cricket') {
+              <div class="cricket-visual">
+                @for (target of cricketTargets; track target.label; let targetIndex = $index) {
+                  <div class="cricket-cell" [style.--cell]="targetIndex">
+                    <svg viewBox="0 0 24 24" class="cricket-mark" [class.closed]="target.marks === 3">
+                      @if (target.marks >= 1) {
+                        <path d="M6 18 L18 6" pathLength="1" />
+                      }
+                      @if (target.marks >= 2) {
+                        <path d="M6 6 L18 18" pathLength="1" class="second" />
+                      }
+                      @if (target.marks === 3) {
+                        <circle cx="12" cy="12" r="10" pathLength="1" class="third" />
+                      }
+                    </svg>
+                    <span class="cricket-label">{{ target.label }}</span>
+                  </div>
+                }
+              </div>
+            }
+            @case ('killer') {
+              <div class="killer-visual">
+                @for (player of killerLives; track player.number; let row = $index) {
+                  <div class="killer-row" [style.--row]="row">
+                    <span class="killer-number">D{{ player.number }}</span>
+                    <span class="killer-lives">
+                      @for (alive of player.lives; track $index) {
+                        <span class="life" [class.lost]="!alive"></span>
+                      }
+                    </span>
+                  </div>
+                }
+              </div>
+            }
+            @case ('around-the-clock') {
+              <svg class="atc-visual" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="30" class="atc-inner" />
+                @for (segment of boardSegments; track segment.number) {
+                  <path [attr.d]="segment.path" class="atc-segment" [style.--n]="segment.number" />
+                }
+                <circle cx="50" cy="50" r="4" class="atc-bull" />
+              </svg>
+            }
+            @case ('shanghai') {
+              <div class="shanghai-visual">
+                @for (round of shanghaiRounds; track round) {
+                  <div class="shanghai-round" [class.shanghai]="round === 5">
+                    <span class="shanghai-number">{{ round }}</span>
+                    @for (hit of shanghaiHits[round]; track $index; let ring = $index) {
+                      <span class="shanghai-hit" [class.on]="hit" [style.--ring]="ring"></span>
+                    }
+                  </div>
+                }
+              </div>
+            }
+            @case ('121') {
+              <div class="drill-visual">
+                <div class="drill-window">
+                  <div class="drill-reel">
+                    <span>121</span>
+                    <span>122</span>
+                  </div>
+                </div>
+                <div class="drill-darts">
+                  @for (dart of checkoutDarts; track dart) {
+                    <span class="drill-dart" [style.--dart]="dart"></span>
+                  }
+                </div>
+              </div>
+            }
+          }
+        </div>
+
+        <div class="tile-text">
+          <h2 class="tile-title" [style.view-transition-name]="'game-title-' + game.mode">
+            {{ game.title }}
+          </h2>
+          <p class="tile-tagline">{{ game.tagline }}</p>
+        </div>
+        <span class="tile-go" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="18" height="18">
+            <path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </span>
+      </a>
+    }
+  </nav>
+</section>

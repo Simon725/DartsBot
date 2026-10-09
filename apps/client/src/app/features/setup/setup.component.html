@@ -1,0 +1,189 @@
+<section class="setup">
+  <a routerLink="/" class="back">
+    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+      <path d="M19 12H5M11 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+    </svg>
+    All games
+  </a>
+
+  <header class="intro">
+    <h1 class="title" [style.view-transition-name]="'game-title-' + game().mode">{{ game().title }}</h1>
+    <p class="tagline">{{ game().tagline }}</p>
+    <p class="rules">{{ game().rules }}</p>
+  </header>
+
+  @if (hasSettings()) {
+    <section appSpotlight class="card" aria-labelledby="settings-heading">
+      <h2 id="settings-heading" class="card-heading">Settings</h2>
+
+      @switch (mode()) {
+        @case ('x01') {
+          <div class="fields">
+            <div class="field">
+              <span class="field-label">Start score</span>
+              <app-segmented-control label="Start score" [options]="startScoreOptions" [(value)]="startScore" />
+            </div>
+            <div class="field-row">
+              <div class="field">
+                <span class="field-label">Sets</span>
+                <app-stepper label="sets" [min]="1" [max]="9" [(value)]="sets" />
+              </div>
+              <div class="field">
+                <span class="field-label">Legs per set</span>
+                <app-stepper label="legs per set" [min]="1" [max]="9" [(value)]="legsPerSet" />
+              </div>
+            </div>
+            <div class="field">
+              <span class="field-label">Check-in</span>
+              <app-segmented-control label="Check-in" [options]="checkoutOptions" [(value)]="inMode" />
+            </div>
+            <div class="field">
+              <span class="field-label">Checkout</span>
+              <app-segmented-control label="Checkout" [options]="checkoutOptions" [(value)]="outMode" />
+            </div>
+          </div>
+        }
+        @case ('shanghai') {
+          <div class="fields">
+            <div class="field">
+              <span class="field-label">Length</span>
+              <app-segmented-control label="Length" [options]="shanghaiRoundOptions" [(value)]="shanghaiRounds" />
+              <p class="help">7 rounds is the classic game. 20 rounds covers the whole board.</p>
+            </div>
+          </div>
+        }
+        @case ('killer') {
+          <div class="fields">
+            <div class="field">
+              <span class="field-label">Starting lives</span>
+              <app-stepper label="starting lives" [min]="1" [max]="9" [(value)]="killerLives" />
+            </div>
+          </div>
+        }
+        @case ('121') {
+          <div class="fields">
+            <div class="field">
+              <span class="field-label">Darts per attempt</span>
+              <app-stepper label="darts per attempt" [min]="3" [max]="30" [(value)]="dartLimit" />
+            </div>
+            <div class="field">
+              <span class="field-label">After a missed checkout</span>
+              <app-segmented-control label="After a missed checkout" [options]="failOptions" [(value)]="onFail" />
+              <p class="help">
+                {{ onFail() === 'fallback' ? 'The target drops by one, but never below 121.' : 'The target stays where it is.' }}
+              </p>
+            </div>
+          </div>
+        }
+      }
+    </section>
+  }
+
+  <section appSpotlight class="card" aria-labelledby="players-heading">
+    <h2 id="players-heading" class="card-heading">{{ isSinglePlayer() ? 'Player' : 'Players' }}</h2>
+
+    <div class="players">
+      @for (player of players(); track player.uid; let playerIndex = $index) {
+        <div class="player-block">
+          <div class="player-row">
+            <span class="player-index">P{{ playerIndex + 1 }}</span>
+            <input
+              type="text"
+              class="player-name"
+              [ngModel]="player.name"
+              (ngModelChange)="updatePlayerName(playerIndex, $event)"
+              [attr.aria-label]="'Name of player ' + (playerIndex + 1)"
+              placeholder="Player name"
+            />
+            @if (!isSinglePlayer()) {
+              <label class="bot-toggle" [class.on]="player.isBot">
+                <input
+                  type="checkbox"
+                  [ngModel]="player.isBot"
+                  (ngModelChange)="updatePlayerIsBot(playerIndex, $event)"
+                />
+                <span>BOT</span>
+              </label>
+            }
+            @if (players().length > 1) {
+              <button type="button" class="remove" (click)="removePlayer(playerIndex)" [attr.aria-label]="'Remove ' + player.name">
+                <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                  <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                </svg>
+              </button>
+            }
+          </div>
+
+          @if (player.isBot && !isSinglePlayer()) {
+            <div class="bot-panel">
+              <div class="bot-presets" role="radiogroup" aria-label="Bot difficulty preset">
+                @for (preset of presetChoices; track preset) {
+                  <button
+                    type="button"
+                    role="radio"
+                    [attr.aria-checked]="player.botPreset === preset"
+                    class="preset-chip"
+                    [class.active]="player.botPreset === preset"
+                    (click)="setPlayerPreset(playerIndex, preset)"
+                  >
+                    {{ preset }}
+                  </button>
+                }
+              </div>
+
+              <div class="bot-sliders">
+                <label class="slider-field">
+                  <span class="slider-head">
+                    <span class="slider-label">3-dart avg</span>
+                    <span class="slider-value">{{ player.botConfig.targetAverage }}</span>
+                  </span>
+                  <input
+                    type="range"
+                    [min]="BOT_LIMITS.averageMin"
+                    [max]="BOT_LIMITS.averageMax"
+                    step="1"
+                    [ngModel]="player.botConfig.targetAverage"
+                    (ngModelChange)="setPlayerAvg(playerIndex, $event)"
+                  />
+                </label>
+                <label class="slider-field">
+                  <span class="slider-head">
+                    <span class="slider-label">Checkout %</span>
+                    <span class="slider-value">{{ player.botConfig.checkoutPercent }}</span>
+                  </span>
+                  <input
+                    type="range"
+                    [min]="BOT_LIMITS.checkoutMin"
+                    [max]="BOT_LIMITS.checkoutMax"
+                    step="1"
+                    [ngModel]="player.botConfig.checkoutPercent"
+                    (ngModelChange)="setPlayerCheckout(playerIndex, $event)"
+                  />
+                </label>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      @if (canAddPlayer()) {
+        <button type="button" class="add-player" (click)="addPlayer()">Add player</button>
+      }
+    </div>
+  </section>
+
+  <div class="start-bar">
+    @if (startBlockedReason(); as reason) {
+      <p class="error" role="alert">{{ reason }}</p>
+    }
+    @if (errorMessage(); as message) {
+      <p class="error" role="alert">{{ message }}</p>
+    }
+    <button type="button" class="start" (click)="start()" [disabled]="creating() || startBlockedReason() !== null">
+      <span class="start-label">{{ creating() ? 'Throwing for bull…' : 'Start game' }}</span>
+      <svg class="start-arrow" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+        <path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    </button>
+  </div>
+</section>
