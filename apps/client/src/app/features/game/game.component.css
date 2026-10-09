@@ -115,6 +115,49 @@
   letter-spacing: 0;
 }
 
+.undo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  background: transparent;
+  border: 1px solid var(--bg-line);
+  border-radius: 999px;
+  color: var(--ink-mute);
+  font: inherit;
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s var(--ease-out), color 0.2s var(--ease-out),
+    box-shadow 0.2s var(--ease-out), transform 0.15s var(--ease-out);
+}
+
+.undo:hover:not(:disabled) {
+  border-color: var(--cream);
+  color: var(--cream);
+  box-shadow: 0 0 16px -6px var(--cream);
+}
+
+.undo:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.undo:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.undo svg {
+  transition: transform 0.25s var(--ease-out);
+}
+
+.undo:hover:not(:disabled) svg {
+  transform: rotate(-25deg);
+}
+
 /* ── Board layout ─────────────────────────── */
 
 .board-layout {

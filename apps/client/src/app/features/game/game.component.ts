@@ -20,6 +20,7 @@ export class GameComponent implements OnInit {
   readonly state = this.gameStateService.state;
   readonly winner = this.gameStateService.winner;
   readonly error = this.gameStateService.error;
+  readonly canUndo = this.gameStateService.canUndo;
 
   readonly gameId = computed(() => this.state()?.id ?? null);
 
@@ -153,6 +154,10 @@ export class GameComponent implements OnInit {
     }
     return 'Unavailable in this mode';
   });
+
+  undo(): void {
+    this.gameStateService.undo();
+  }
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');

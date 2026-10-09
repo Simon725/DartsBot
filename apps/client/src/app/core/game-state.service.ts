@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, computed, signal } from '@angular/core';
 import {
   applyThrow,
   applyTurnTotal,
@@ -20,6 +20,9 @@ export class GameStateService {
   readonly state = signal<GameState | null>(null);
   readonly error = signal<string | null>(null);
   readonly winner = signal<Player | null>(null);
+
+  private readonly undoStack = signal<GameState[]>([]);
+  readonly canUndo = computed(() => this.undoStack().length > 0);
 
   private botTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -50,6 +53,18 @@ export class GameStateService {
     this.runMove(gameId, (state) => applyTurnTotal(state, playerId, { total, checkoutDarts }));
   }
 
+  undo(): void {
+    const stack = this.undoStack();
+    const previous = stack.at(-1);
+    if (!previous) return;
+    this.clearBotTimer();
+    this.undoStack.set(stack.slice(0, -1));
+    this.error.set(null);
+    this.winner.set(null);
+    this.commit(previous);
+    this.scheduleBotIfNeeded();
+  }
+
   private runMove(gameId: string, move: (state: GameState) => ApplyThrowResult): void {
     const state = this.state();
     if (state?.id !== gameId) {
@@ -58,6 +73,8 @@ export class GameStateService {
     }
     try {
       const result = move(state);
+      this.undoStack.update((stack) => [...stack, state]);
+      this.error.set(null);
       this.applyResult(result);
       if (!result.gameWon) this.scheduleBotIfNeeded();
     } catch (err) {
@@ -115,6 +132,7 @@ export class GameStateService {
   private resetSession(): void {
     this.clearBotTimer();
     this.state.set(null);
+    this.undoStack.set([]);
     this.error.set(null);
     this.winner.set(null);
   }
