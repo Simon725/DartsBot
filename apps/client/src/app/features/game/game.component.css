@@ -1,0 +1,234 @@
+:host { display: block; position: relative; z-index: 2; }
+
+.game {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  animation: fade-up 0.5s var(--ease-out) both;
+}
+
+/* ── Loading state ────────────────────────── */
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 6rem 0;
+  color: var(--ink-mute);
+  font-size: 0.85rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.loading-mark {
+  display: block;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid var(--bg-line);
+  border-top-color: var(--match-red);
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Header ───────────────────────────────── */
+
+.game-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--bg-line);
+  position: relative;
+}
+
+.game-header::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 60px;
+  height: 2px;
+  background: var(--match-red);
+  box-shadow: 0 0 12px var(--match-red-glow);
+}
+
+.title-block { flex: 1; min-width: 0; }
+
+.game-title {
+  font-family: var(--font-display);
+  font-size: clamp(2.2rem, 5vw, 3.6rem);
+  line-height: 1;
+  letter-spacing: 0.02em;
+  margin: 0.45rem 0 0.4rem;
+  color: var(--cream);
+}
+
+.game-sub {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--ink-mute);
+}
+
+.exit {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.95rem;
+  background: transparent;
+  border: 1px solid var(--bg-line);
+  border-radius: 999px;
+  color: var(--ink-mute);
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: all 0.2s var(--ease-out);
+}
+
+.exit:hover {
+  border-color: var(--match-red);
+  color: var(--match-red);
+}
+
+.exit-x {
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+/* ── Turn indicator ───────────────────────── */
+
+.turn-indicator {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  padding: 0.4rem 0.2rem;
+}
+
+.turn-arrow {
+  color: var(--match-red);
+  font-size: 1.2rem;
+  animation: aim-blink 1.6s ease-in-out infinite;
+}
+
+.turn-text strong {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  letter-spacing: 0.04em;
+  color: var(--cream);
+  font-weight: 400;
+}
+
+.turn-call {
+  margin-left: 0.5rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--brass);
+  font-weight: 600;
+}
+
+.bot-hint {
+  margin-left: 0.5rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--sage-bright);
+  font-weight: 600;
+  font-style: italic;
+}
+
+/* ── Winner overlay ───────────────────────── */
+
+.winner-banner {
+  background:
+    radial-gradient(ellipse 80% 100% at 50% 0%, rgba(200, 165, 87, 0.18), transparent 70%),
+    linear-gradient(180deg, rgba(36, 30, 28, 0.95), rgba(20, 16, 15, 0.95));
+  border: 1px solid var(--brass);
+  border-radius: 16px;
+  padding: 2rem 2rem;
+  position: relative;
+  overflow: hidden;
+  animation: fade-up 0.7s var(--ease-thud) both;
+  box-shadow: 0 30px 80px -20px rgba(200, 165, 87, 0.3);
+}
+
+.winner-banner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      transparent 0 30px,
+      rgba(200, 165, 87, 0.04) 30px 31px
+    );
+  pointer-events: none;
+}
+
+.winner-inner {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  position: relative;
+}
+
+.trophy {
+  color: var(--brass);
+  flex-shrink: 0;
+}
+
+.winner-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.winner-label {
+  font-size: 0.7rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--brass);
+  font-weight: 700;
+}
+
+.winner-name {
+  font-family: var(--font-display);
+  font-size: clamp(2.4rem, 6vw, 4rem);
+  letter-spacing: 0.02em;
+  line-height: 1;
+  margin: 0.2rem 0 0.4rem;
+  color: var(--cream);
+}
+
+.winner-sub {
+  font-family: var(--font-serif);
+  font-style: italic;
+  color: var(--ink-mute);
+  font-size: 1rem;
+}
+
+.error {
+  color: var(--match-red);
+  font-size: 0.9rem;
+  border-left: 2px solid var(--match-red);
+  padding-left: 0.8rem;
+}
+
+@media (max-width: 640px) {
+  .game-header { flex-direction: column; gap: 0.8rem; }
+  .winner-inner { flex-direction: column; text-align: center; }
+}

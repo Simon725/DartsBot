@@ -1,0 +1,138 @@
+<div class="throw-input" [class.disabled]="disabled()">
+  <div class="mode-tabs" role="tablist" aria-label="Input method">
+    @for (tab of modeTabs(); track tab.key) {
+      <button
+        type="button"
+        class="mode-tab"
+        role="tab"
+        [class.active]="inputMode() === tab.key"
+        [attr.aria-selected]="inputMode() === tab.key"
+        [disabled]="!tab.enabled || disabled()"
+        [title]="tab.hint"
+        (click)="setInputMode(tab.key)"
+      >
+        <span class="tab-label">{{ tab.label }}</span>
+        <span class="tab-hint">{{ tab.hint }}</span>
+      </button>
+    }
+  </div>
+
+  @if (inputMode() === 'board' || inputMode() === 'numeric') {
+    <div class="multipliers" role="radiogroup" aria-label="Throw multiplier">
+      @for (m of multipliers; track m.key) {
+        <button
+          type="button"
+          class="mult"
+          [class.active]="selectedMultiplier() === m.key"
+          [attr.data-key]="m.key"
+          (click)="selectMultiplier(m.key)"
+          [disabled]="disabled()"
+          role="radio"
+          [attr.aria-checked]="selectedMultiplier() === m.key"
+        >
+          <span class="mult-letter">{{ m.label }}</span>
+          <span class="mult-name">
+            @switch (m.key) {
+              @case (1) { single }
+              @case (2) { double }
+              @case (3) { triple }
+            }
+          </span>
+          <span class="mult-x">×{{ m.key }}</span>
+        </button>
+      }
+    </div>
+
+    <div class="segments">
+      @for (s of (inputMode() === 'board' ? boardSegments : numericSegments); track s) {
+        <button
+          type="button"
+          class="seg"
+          (click)="submitSegment(s)"
+          [disabled]="disabled()"
+        >
+          <span class="seg-num">{{ s }}</span>
+        </button>
+      }
+    </div>
+
+    <div class="specials">
+      <button type="button" class="seg bull" (click)="submitSegment(25)" [disabled]="disabled()">
+        <span class="seg-num">25</span>
+        <span class="seg-label">bull</span>
+      </button>
+      <button type="button" class="seg miss" (click)="submitMiss()" [disabled]="disabled()">
+        <span class="seg-num">∅</span>
+        <span class="seg-label">miss</span>
+      </button>
+    </div>
+  }
+
+  @if (inputMode() === 'total') {
+    <div class="total-form">
+      <label class="total-field">
+        <span class="total-label">Turn total</span>
+        <input
+          #totalInputEl
+          type="number"
+          min="0"
+          max="180"
+          inputmode="numeric"
+          [ngModel]="totalScore()"
+          (ngModelChange)="totalScore.set($event)"
+          (keydown.enter)="submitTotal()"
+          [disabled]="disabled()"
+          placeholder="0–180"
+        />
+      </label>
+      @if (totalError(); as err) {
+        <p class="total-warning" role="alert">
+          {{ err }}
+        </p>
+      }
+      <button
+        type="button"
+        class="submit-total"
+        (click)="submitTotal()"
+        [disabled]="disabled() || !totalSubmittable()"
+      >
+        <span>Submit turn</span>
+        <span class="submit-arrow" aria-hidden="true">↵</span>
+      </button>
+      <p class="total-hint">
+        {{ totalHint() }}
+      </p>
+    </div>
+
+    <!-- Renders the frozen checkoutSnapshot, never the live remaining()/
+         checkoutOptions() computeds — a server broadcast must not change the
+         prompt's numbers or option buttons while the player is answering it. -->
+    @if (checkoutSnapshot(); as checkout) {
+      <dialog
+        #checkoutDialogEl
+        class="checkout-overlay"
+        attr.aria-label="Checkout {{ checkout.remaining }} — how many darts?"
+        (cancel)="$event.preventDefault(); cancelCheckout()"
+        (click)="onCheckoutOverlayClick($event)"
+        (keydown.escape)="cancelCheckout()"
+        (keydown.1)="confirmCheckout(1)"
+        (keydown.2)="confirmCheckout(2)"
+        (keydown.3)="confirmCheckout(3)"
+      >
+        <div #checkoutCardEl class="checkout-card" tabindex="-1">
+          <span class="checkout-eyebrow">Checkout {{ checkout.remaining }}</span>
+          <h3 class="checkout-question">How many darts?</h3>
+          <div class="checkout-options">
+            @for (d of checkout.options; track d) {
+              <button type="button" class="checkout-option" (click)="confirmCheckout(d)">
+                <span class="option-num">{{ d }}</span>
+                <span class="option-label">{{ d === 1 ? 'dart' : 'darts' }}</span>
+              </button>
+            }
+          </div>
+          <button type="button" class="checkout-cancel" (click)="cancelCheckout()">Cancel</button>
+        </div>
+      </dialog>
+    }
+  }
+</div>

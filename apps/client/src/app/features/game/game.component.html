@@ -1,0 +1,69 @@
+<section class="game">
+  @if (!state()) {
+    <div class="loading">
+      <span class="loading-mark" aria-hidden="true"></span>
+      <span>Joining match…</span>
+    </div>
+  } @else {
+    <header class="game-header">
+      <div class="title-block">
+        <span class="eyebrow">Now playing</span>
+        <h1 class="game-title">{{ title() }}</h1>
+        <p class="game-sub">{{ subtitle() }}</p>
+      </div>
+      <a routerLink="/" class="exit">
+        <span>End match</span>
+        <span class="exit-x" aria-hidden="true">×</span>
+      </a>
+    </header>
+
+    <app-scoreboard [state]="state()!" />
+
+    @if (winner()) {
+      <div class="winner-banner" role="status">
+        <div class="winner-inner">
+          <span class="trophy" aria-hidden="true">
+            <svg viewBox="0 0 32 32" width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M10 4h12v6a6 6 0 11-12 0V4z"/>
+              <path d="M22 6h4a3 3 0 010 6h-4M10 6H6a3 3 0 000 6h4"/>
+              <path d="M14 16v4M18 16v4M12 22h8v4h-8z"/>
+            </svg>
+          </span>
+          <div class="winner-text">
+            <span class="winner-label">Game · Set · Match</span>
+            <h2 class="winner-name">{{ winner()!.name }}</h2>
+            <span class="winner-sub">Winner takes the oche.</span>
+          </div>
+        </div>
+      </div>
+    } @else {
+      <div class="turn-indicator">
+        @if (currentPlayer()) {
+          <span class="turn-arrow">▸</span>
+          <span class="turn-text">
+            <strong>{{ currentPlayer()!.name }}</strong>
+            @if (currentPlayer()!.isBot) {
+              <span class="bot-hint">throwing…</span>
+            } @else {
+              <span class="turn-call">to throw</span>
+            }
+          </span>
+        }
+      </div>
+      <app-throw-input
+        [disabled]="inputDisabled()"
+        [turnTotalSupported]="turnTotalSupported()"
+        [turnTotalDisabledReason]="turnTotalDisabledReason()"
+        [outMode]="outMode()"
+        [remaining]="currentRemaining()"
+        [attemptDartsLeft]="attemptDartsLeft()"
+        (throwSubmitted)="onThrow($event)"
+        (turnSubmitted)="onTurn($event)"
+      />
+    }
+
+    @if (error()) {
+      <p class="error">{{ error() }}</p>
+    }
+  }
+</section>

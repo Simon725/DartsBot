@@ -1,0 +1,95 @@
+:host {
+  display: block;
+  min-height: 100dvh;
+  position: relative;
+  z-index: 0;
+}
+
+.app-shell-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 2rem;
+  border-bottom: 1px solid var(--bg-line);
+  background:
+    linear-gradient(180deg, rgba(28, 23, 21, 0.85), rgba(28, 23, 21, 0.35));
+  backdrop-filter: blur(8px);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+  color: var(--ink);
+  transition: color 0.3s var(--ease-out);
+}
+
+.brand:hover {
+  color: var(--cream);
+}
+
+.brand-mark {
+  color: var(--brass);
+  display: grid;
+  place-items: center;
+  transition: transform 0.5s var(--ease-thud);
+}
+
+.brand:hover .brand-mark {
+  transform: rotate(20deg);
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+}
+
+.brand-name {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  letter-spacing: 0.08em;
+}
+
+.brand-sub {
+  font-size: 0.65rem;
+  color: var(--ink-faint);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  margin-top: 0.2rem;
+}
+
+.brand-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--sage-bright);
+  box-shadow: 0 0 8px var(--sage-bright);
+  animation: dot-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes dot-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+@media (max-width: 640px) {
+  .app-shell-top {
+    padding: 0.8rem 1rem;
+  }
+  .brand-meta { display: none; }
+}

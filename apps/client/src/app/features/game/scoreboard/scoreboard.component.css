@@ -1,0 +1,631 @@
+:host { display: block; }
+
+/* ── Shanghai round banner ────────────────── */
+
+.round-banner {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 1rem;
+  padding: 0.8rem 1.2rem;
+  margin: 0 0 1.25rem;
+  border: 1px solid var(--bg-line);
+  background: linear-gradient(180deg, rgba(36, 30, 28, 0.7), rgba(20, 16, 15, 0.6));
+  border-radius: 10px;
+  position: relative;
+  overflow: hidden;
+}
+
+.round-banner::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; bottom: 0;
+  width: 4px;
+  background: var(--match-red);
+}
+
+.round-banner-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.round-banner-num {
+  font-family: var(--font-display);
+  font-size: 2.2rem;
+  color: var(--cream);
+  line-height: 1;
+}
+
+.round-banner-target {
+  font-size: 0.82rem;
+  color: var(--ink-mute);
+  letter-spacing: 0.05em;
+}
+
+.round-banner-target strong {
+  color: var(--brass);
+  font-weight: 700;
+}
+
+/* ── Scoreboard grid ──────────────────────── */
+
+.scoreboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.1rem;
+  margin-bottom: 1.5rem;
+}
+
+.player {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 1.2rem 1.3rem 1.1rem;
+  background:
+    linear-gradient(180deg, rgba(36, 30, 28, 0.7), rgba(20, 16, 15, 0.7));
+  border: 1px solid var(--bg-line);
+  border-radius: 14px;
+  overflow: hidden;
+  isolation: isolate;
+  animation: fade-up 0.55s var(--ease-out) both;
+  transition: border-color 0.4s var(--ease-out), transform 0.4s var(--ease-out);
+}
+
+.player::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(ellipse 60% 50% at 0% 0%, rgba(200, 165, 87, 0.06), transparent 60%);
+  opacity: 0;
+  transition: opacity 0.5s var(--ease-out);
+}
+
+.player.active {
+  border-color: var(--match-red);
+  box-shadow:
+    0 0 0 1px var(--match-red),
+    0 18px 48px -18px var(--match-red-glow),
+    inset 0 0 60px -20px var(--match-red-glow);
+}
+
+.player.active::before {
+  opacity: 1;
+}
+
+.player.active::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: var(--match-red);
+  box-shadow: 0 0 12px var(--match-red);
+  animation: flag-swipe 0.5s var(--ease-out);
+}
+
+/* ── Player header ────────────────────────── */
+
+.player-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-bottom: 0.6rem;
+}
+
+.player-id {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.player-slot {
+  font-size: 0.65rem;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--brass);
+  font-weight: 700;
+}
+
+.player-name {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  letter-spacing: 0.04em;
+  color: var(--cream);
+  line-height: 1.05;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.player-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.badge {
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-weight: 700;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(14, 10, 10, 0.6);
+  border: 1px solid var(--bg-line);
+  color: var(--ink-mute);
+  white-space: nowrap;
+}
+
+.badge.bot {
+  color: var(--sage-bright);
+  border-color: var(--sage);
+  background: rgba(61, 90, 61, 0.16);
+}
+
+.badge.num {
+  color: var(--brass);
+  border-color: var(--brass-deep);
+  background: rgba(200, 165, 87, 0.1);
+  font-family: var(--font-numeric);
+}
+
+.badge.killer {
+  color: var(--cream);
+  background: var(--match-red);
+  border-color: var(--match-red);
+  letter-spacing: 0.2em;
+  box-shadow: 0 0 12px var(--match-red-glow);
+}
+
+/* ── Score block (the hero) ───────────────── */
+
+.score-block {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.4rem;
+  margin: 0.3rem 0 0.8rem;
+  position: relative;
+}
+
+.aim-mark {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--match-red);
+  font-size: 1.3rem;
+  animation: aim-blink 1.6s ease-in-out infinite;
+}
+
+@keyframes aim-blink {
+  0%, 100% { opacity: 0.6; transform: translate(0, -50%); }
+  50% { opacity: 1; transform: translate(3px, -50%); }
+}
+
+.score {
+  font-family: var(--font-display);
+  font-size: clamp(4.5rem, 12vw, 6.5rem);
+  line-height: 0.85;
+  letter-spacing: -0.01em;
+  color: var(--cream);
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 32px rgba(241, 232, 211, 0.12);
+  transition: color 0.3s var(--ease-out), text-shadow 0.3s var(--ease-out);
+}
+
+.player.active .score {
+  color: #fff;
+  text-shadow: 0 0 32px rgba(241, 232, 211, 0.25);
+}
+
+/* ── Meta stats (sets/legs/darts/checkouts) ─ */
+
+.meta-row {
+  display: flex;
+  gap: 0.4rem;
+  justify-content: center;
+  margin-bottom: 0.8rem;
+}
+
+.stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.45rem 0.6rem;
+  background: rgba(14, 10, 10, 0.55);
+  border: 1px solid var(--bg-line);
+  border-radius: 8px;
+}
+
+.stat-label {
+  font-size: 0.6rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-weight: 600;
+}
+
+.stat-val {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  letter-spacing: 0.05em;
+  color: var(--cream);
+  line-height: 1;
+  margin-top: 0.1rem;
+}
+
+.stat-val small {
+  font-size: 0.7em;
+  color: var(--ink-mute);
+}
+
+.stat.highlight {
+  background: rgba(200, 165, 87, 0.08);
+  border-color: var(--brass-deep);
+}
+
+.stat.highlight .stat-val {
+  color: var(--brass);
+}
+
+/* ── Cricket marks ────────────────────────── */
+
+.cricket-marks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin-top: 0.4rem;
+  padding-top: 0.6rem;
+  border-top: 1px dashed var(--bg-line);
+}
+
+.cricket-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.18rem 0.5rem;
+  border-radius: 5px;
+  transition: background 0.3s var(--ease-out);
+}
+
+.cricket-row.closed {
+  background: rgba(61, 90, 61, 0.18);
+}
+
+.cricket-num {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  letter-spacing: 0.04em;
+  color: var(--ink-mute);
+  width: 1.8rem;
+}
+
+.cricket-row.closed .cricket-num {
+  color: var(--sage-bright);
+}
+
+.cricket-pips {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.pip {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid var(--bg-line);
+  background: transparent;
+  position: relative;
+  transition: all 0.25s var(--ease-thud);
+}
+
+.pip.lit {
+  background: var(--cream);
+  border-color: var(--cream);
+  box-shadow: 0 0 6px rgba(241, 232, 211, 0.4);
+}
+
+.cricket-row.closed .pip.lit {
+  background: var(--sage-bright);
+  border-color: var(--sage-bright);
+  box-shadow: 0 0 6px var(--sage-bright);
+}
+
+/* ── Current-turn throws strip ────────────── */
+
+.throws {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--bg-line);
+}
+
+.throw {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 3.4rem;
+  padding: 0.4rem 0.3rem;
+  background: rgba(14, 10, 10, 0.6);
+  border: 1px solid var(--bg-line);
+  border-radius: 8px;
+  font-family: var(--font-numeric);
+  animation: thud 0.3s var(--ease-thud);
+}
+
+.throw-val {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  letter-spacing: 0.04em;
+  color: var(--cream);
+  line-height: 1;
+}
+
+.throw-sub {
+  font-size: 0.72rem;
+  color: var(--ink-faint);
+  font-family: var(--font-numeric);
+  margin-top: 0.2rem;
+}
+
+.throw.special {
+  border-color: var(--match-red);
+  background: rgba(210, 32, 45, 0.12);
+}
+
+.throw.special .throw-val {
+  color: var(--match-red);
+}
+
+.throw.invalid .throw-val {
+  color: var(--ink-faint);
+  text-decoration: line-through;
+}
+
+.throw.empty {
+  border-style: dashed;
+  background: transparent;
+}
+
+.throw.empty .throw-val {
+  color: var(--ink-faint);
+  opacity: 0.4;
+}
+
+/* ── 121 drill hero block ─────────────────── */
+
+.hero-121 {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0.3rem 0 0.8rem;
+}
+
+.aiming-label {
+  font-size: 0.65rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--brass);
+  font-weight: 700;
+}
+
+.remaining-hero {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.4rem;
+  position: relative;
+  width: 100%;
+}
+
+/* The .score-block sibling uses position:relative + absolute aim-mark.
+   Here .remaining-hero plays the same role for 121, so the standard
+   .score / .aim-mark styles from the existing CSS apply. */
+
+.score-strip {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  background: rgba(14, 10, 10, 0.55);
+  border: 1px solid var(--bg-line);
+  border-radius: 10px;
+}
+
+.score-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 3.4rem;
+  padding: 0.1rem 0.4rem;
+}
+
+.chip-num {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  letter-spacing: 0.04em;
+  color: var(--cream);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.chip-num small {
+  font-size: 0.7em;
+  color: var(--ink-mute);
+}
+
+/* The score chip (checkouts count) gets the brass treatment so it's
+   distinct from the supporting target / darts chips. */
+.score-chip:first-child .chip-num {
+  color: var(--brass);
+}
+
+.chip-label {
+  font-size: 0.6rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-weight: 600;
+  margin-top: 0.2rem;
+}
+
+.score-chip:first-child .chip-label {
+  color: var(--brass);
+}
+
+.chip-sep {
+  width: 1px;
+  background: var(--bg-line);
+  margin: 0.2rem 0;
+}
+
+/* ── Match stats strip (avg / 1st9 / darts) ──────── */
+
+.stat-strip {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: 0.3rem;
+  margin: 0.5rem 0 0.6rem;
+  padding: 0.4rem 0.5rem;
+  background: rgba(20, 16, 15, 0.55);
+  border: 1px dashed var(--bg-line);
+  border-radius: 8px;
+}
+
+.stat-chip {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 3.4rem;
+  padding: 0.1rem 0.3rem;
+}
+
+.stat-chip .chip-num {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  letter-spacing: 0.04em;
+  color: var(--cream);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-chip .chip-label {
+  font-size: 0.55rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-weight: 600;
+  margin-top: 0.2rem;
+  text-align: center;
+}
+
+/* Highlight the average chip on the active player */
+.player.active .stat-strip .stat-chip:first-child .chip-num {
+  color: var(--brass);
+}
+
+/* ── Checkout helper ──────────────────────── */
+
+.checkout {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  align-items: center;
+  margin: 0.1rem 0 0.7rem;
+  padding: 0.5rem 0.6rem 0.6rem;
+  background: rgba(200, 165, 87, 0.05);
+  border: 1px solid var(--brass-deep);
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+  animation: fade-up 0.35s var(--ease-out);
+}
+
+.checkout::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent 0%, rgba(200, 165, 87, 0.06) 50%, transparent 100%);
+}
+
+.checkout-label {
+  font-size: 0.62rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--brass);
+  font-weight: 700;
+}
+
+.checkout-route {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.checkout-step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 3rem;
+  padding: 0.3rem 0.6rem;
+  background: rgba(14, 10, 10, 0.7);
+  border: 1px solid var(--brass-deep);
+  border-radius: 6px;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  letter-spacing: 0.04em;
+  color: var(--cream);
+  position: relative;
+}
+
+.checkout-step:not(:last-child)::after {
+  content: '▸';
+  position: absolute;
+  right: -0.7rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--brass);
+  font-size: 0.75rem;
+}
+
+.checkout.bogey {
+  background: rgba(210, 32, 45, 0.08);
+  border-color: var(--oxblood);
+}
+
+.checkout.bogey .checkout-label {
+  color: var(--match-red);
+}
+
+.checkout-bogey {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 0.85rem;
+  color: var(--match-red);
+}
+
+@media (max-width: 640px) {
+  .scoreboard { grid-template-columns: 1fr; }
+}
