@@ -12,7 +12,8 @@ import {
 } from '@darts/shared';
 
 const STORAGE_KEY = 'oche.current-game';
-const BOT_DELAY_MS = 800;
+const BOT_DELAY_KEY = 'oche.bot-delay-seconds';
+const DEFAULT_BOT_DELAY_SECONDS = 2;
 const DARTS_PER_TURN = 3;
 
 @Injectable({ providedIn: 'root' })
@@ -23,6 +24,8 @@ export class GameStateService {
 
   private readonly undoStack = signal<GameState[]>([]);
   readonly canUndo = computed(() => this.undoStack().length > 0);
+
+  readonly botDelaySeconds = signal(readBotDelaySeconds());
 
   private botTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -51,6 +54,11 @@ export class GameStateService {
 
   throwTurn(gameId: string, playerId: string, total: number, checkoutDarts?: 1 | 2 | 3): void {
     this.runMove(gameId, (state) => applyTurnTotal(state, playerId, { total, checkoutDarts }));
+  }
+
+  setBotDelaySeconds(seconds: number): void {
+    this.botDelaySeconds.set(seconds);
+    writeStorage(BOT_DELAY_KEY, String(seconds));
   }
 
   undo(): void {
@@ -101,25 +109,19 @@ export class GameStateService {
   private scheduleBotIfNeeded(): void {
     if (!this.currentBot()) return;
     this.clearBotTimer();
-    this.botTimer = setTimeout(() => this.playBotTurn(), BOT_DELAY_MS);
+    const dartDelayMs = (this.botDelaySeconds() * 1000) / DARTS_PER_TURN;
+    this.botTimer = setTimeout(() => this.playBotDart(), dartDelayMs);
   }
 
-  private playBotTurn(): void {
+  private playBotDart(): void {
     this.botTimer = undefined;
     const bot = this.currentBot();
-    if (!bot) return;
+    const state = this.state();
+    if (!bot || !state) return;
 
-    for (let dart = 0; dart < DARTS_PER_TURN; dart++) {
-      const state = this.state();
-      if (!state || state.status !== 'active') return;
-      if (state.players[state.currentPlayerIndex]?.id !== bot.id) break;
-      const result = applyThrow(state, bot.id, botThrow(state, bot.id));
-      this.applyResult(result);
-      if (result.gameWon) return;
-      if (result.turnOver) break;
-    }
-
-    this.scheduleBotIfNeeded();
+    const result = applyThrow(state, bot.id, botThrow(state, bot.id));
+    this.applyResult(result);
+    if (!result.gameWon) this.scheduleBotIfNeeded();
   }
 
   private currentBot(): Player | null {
@@ -153,9 +155,23 @@ function readSavedGame(): GameState | null {
   }
 }
 
-function saveGame(state: GameState): void {
+function readBotDelaySeconds(): number {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    const raw = localStorage.getItem(BOT_DELAY_KEY);
+    const seconds = Number(raw);
+    return raw !== null && Number.isFinite(seconds) ? seconds : DEFAULT_BOT_DELAY_SECONDS;
+  } catch {
+    return DEFAULT_BOT_DELAY_SECONDS;
+  }
+}
+
+function saveGame(state: GameState): void {
+  writeStorage(STORAGE_KEY, JSON.stringify(state));
+}
+
+function writeStorage(key: string, value: string): void {
+  try {
+    localStorage.setItem(key, value);
   } catch {
     // Storage can be full or blocked (private mode); the game still runs in memory.
   }

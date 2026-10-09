@@ -30,6 +30,7 @@ interface PlayerDraft {
 }
 
 const MAX_PLAYERS = 8;
+const MAX_BOT_DELAY_SECONDS = 10;
 const DIFFICULTIES: BotDifficulty[] = ['beginner', 'casual', 'club', 'pro'];
 
 let nextDraftUid = 1;
@@ -98,6 +99,10 @@ export class SetupComponent {
 
   readonly isSinglePlayer = computed(() => this.mode() === '121');
   readonly hasSettings = computed(() => !['cricket', 'around-the-clock'].includes(this.mode()));
+  readonly hasBot = computed(() => !this.isSinglePlayer() && this.players().some((player) => player.isBot));
+  readonly botDelaySeconds = this.gameState.botDelaySeconds;
+  readonly MAX_BOT_DELAY_SECONDS = MAX_BOT_DELAY_SECONDS;
+
   readonly canAddPlayer = computed(() => !this.isSinglePlayer() && this.players().length < MAX_PLAYERS);
 
   readonly startBlockedReason = computed(() => {
@@ -159,6 +164,10 @@ export class SetupComponent {
 
   setPlayerCheckout(index: number, checkoutPercent: number): void {
     this.updateBotConfig(index, { checkoutPercent });
+  }
+
+  setBotDelaySeconds(seconds: number): void {
+    this.gameState.setBotDelaySeconds(seconds);
   }
 
   async start(): Promise<void> {

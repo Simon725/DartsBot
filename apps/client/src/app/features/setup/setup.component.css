@@ -151,6 +151,10 @@ input[type='text'] {
   margin-top: 0.4rem;
 }
 
+.bot-delay {
+  margin: 0.6rem 0 0.2rem;
+}
+
 .player-row {
   display: grid;
   grid-template-columns: auto 1fr auto auto auto;

@@ -166,6 +166,20 @@
         </div>
       }
 
+      @if (hasBot()) {
+        <div class="field bot-delay">
+          <span class="field-label">Bot turn time (seconds)</span>
+          <app-stepper
+            label="seconds"
+            [min]="0"
+            [max]="MAX_BOT_DELAY_SECONDS"
+            [value]="botDelaySeconds()"
+            (valueChange)="setBotDelaySeconds($event)"
+          />
+          <p class="help">How long the bot takes for its 3 darts. Each dart appears one by one.</p>
+        </div>
+      }
+
       @if (canAddPlayer()) {
         <button type="button" class="add-player" (click)="addPlayer()">Add player</button>
       }
