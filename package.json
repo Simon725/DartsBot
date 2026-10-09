@@ -8,9 +8,8 @@
     "packages/*"
   ],
   "scripts": {
-    "client": "npm run start -w @darts/client",
-    "server": "npm run dev -w @darts/server",
-    "build": "npm run build -w @darts/shared && npm run build -w @darts/client && npm run build -w @darts/server",
-    "test": "npm run test -w @darts/shared && npm run test -w @darts/server && npm run test -w @darts/client"
+    "start": "npm run start -w @darts/client",
+    "build": "npm run build -w @darts/client",
+    "test": "npm run test -w @darts/shared && npm run test -w @darts/client"
   }
 }

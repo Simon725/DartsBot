@@ -1,6 +1,5 @@
-import { Component, inject } from '@angular/core';
+import { Component } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
-import { SocketService } from './core/socket.service';
 
 @Component({
   selector: 'app-root',
@@ -8,6 +7,4 @@ import { SocketService } from './core/socket.service';
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
-export class App {
-  readonly connected = inject(SocketService).connected;
-}
+export class App {}

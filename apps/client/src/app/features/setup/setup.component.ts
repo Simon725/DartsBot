@@ -166,7 +166,7 @@ export class SetupComponent {
     this.creating.set(true);
     this.errorMessage.set(null);
     try {
-      const gameId = await this.gameState.createGame(this.buildConfig(), this.buildPlayers());
+      const gameId = this.gameState.createGame(this.buildConfig(), this.buildPlayers());
       await this.router.navigate(['/game', gameId]);
     } catch (err) {
       this.errorMessage.set(err instanceof Error ? err.message : String(err));

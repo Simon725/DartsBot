@@ -63,42 +63,8 @@
   margin-top: 0.2rem;
 }
 
-.brand-meta {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.7rem;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
-}
-
-.dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--sage-bright);
-  box-shadow: 0 0 8px var(--sage-bright);
-  animation: dot-pulse 2.4s ease-in-out infinite;
-}
-
-.brand-meta.offline {
-  color: var(--cream);
-}
-
-.brand-meta.offline .dot {
-  background: var(--match-red);
-  box-shadow: 0 0 8px var(--match-red);
-}
-
-@keyframes dot-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-
 @media (max-width: 640px) {
   .app-shell-top {
     padding: 0.8rem 1rem;
   }
-  .brand-meta { display: none; }
 }
