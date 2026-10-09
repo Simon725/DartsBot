@@ -20,6 +20,9 @@
     <div class="board-layout">
       <div class="board-main">
         <app-scoreboard [state]="state()!" />
+        @if (showLegHistory()) {
+          <app-leg-history [state]="state()!" />
+        }
       </div>
 
       <aside class="board-side">

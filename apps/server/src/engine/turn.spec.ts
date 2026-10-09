@@ -44,10 +44,8 @@ describe('applyTurnTotal — x01', () => {
     const r = applyTurnTotal(s, 'p1', { total: 40, checkoutDarts: 2 });
     expect(r.gameWon).toBe(true);
     expect(r.state.winner).toBe('p1');
-    // sets=1/legsPerSet=1: the game ends and stats are preserved, so the
-    // winner's dartsThrown shows the turn-start value (0) + the 2 checkout darts.
     if (r.state.modeState.mode === 'x01') {
-      expect(r.state.modeState.dartsThrown['p1']).toBe(2);
+      expect(r.state.modeState.completedLegs[0]!.dartsThrown['p1']).toBe(2);
     }
   });
 
@@ -58,7 +56,7 @@ describe('applyTurnTotal — x01', () => {
     expect(r.gameWon).toBe(true);
     expect(r.state.winner).toBe('p1');
     if (r.state.modeState.mode === 'x01') {
-      expect(r.state.modeState.dartsThrown['p1']).toBe(3);
+      expect(r.state.modeState.completedLegs[0]!.dartsThrown['p1']).toBe(3);
     }
   });
 

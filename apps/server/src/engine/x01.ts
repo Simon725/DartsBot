@@ -1,4 +1,4 @@
-import type { CheckoutMode, GameState, Throw, X01Config, X01ModeState } from '@darts/shared';
+import type { CheckoutMode, GameState, Throw, X01Config, X01LegRecord, X01ModeState } from '@darts/shared';
 import { rawScore, type ApplyThrowResult } from './types.js';
 
 const matchesMode = (t: Throw, mode: CheckoutMode): boolean => {
@@ -37,6 +37,67 @@ export function createX01State(config: X01Config, playerIds: string[]): X01ModeS
     legs,
     legStarterIndex: 0,
     ...emptyStats(playerIds),
+    completedLegs: [],
+  };
+}
+
+function legRecord(ms: X01ModeState, winnerId: string): X01LegRecord {
+  return {
+    winnerId,
+    dartsThrown: ms.dartsThrown,
+    scored: ms.scoredInLeg,
+    first9Score: ms.first9Score,
+    first9Darts: ms.first9Darts,
+  };
+}
+
+/**
+ * Closes the leg `winnerId` just won: archives its stats in completedLegs,
+ * awards legs/sets and, unless the match is over, sets up the next leg.
+ * Expects `modeState` to already contain the winning turn's stats.
+ */
+export function finishX01Leg(
+  state: GameState,
+  modeState: X01ModeState,
+  winnerId: string,
+): { state: GameState; gameWon: boolean } {
+  if (state.config.mode !== 'x01') throw new Error('finishX01Leg: not an x01 game');
+  const config = state.config;
+  const playerIds = state.players.map((p) => p.id);
+
+  const newLegs = { ...modeState.legs, [winnerId]: modeState.legs[winnerId]! + 1 };
+  let newSets = modeState.sets;
+  let gameWon = false;
+  if (newLegs[winnerId]! >= config.legsPerSet) {
+    newSets = { ...newSets, [winnerId]: newSets[winnerId]! + 1 };
+    for (const pid of Object.keys(newLegs)) newLegs[pid] = 0;
+    gameWon = newSets[winnerId]! >= config.sets;
+  }
+
+  const resetScores: Record<string, number> = {};
+  for (const id of playerIds) resetScores[id] = config.startScore;
+  const nextLegStarterIndex = (modeState.legStarterIndex + 1) % state.players.length;
+
+  const nextModeState: X01ModeState = {
+    mode: 'x01',
+    scores: gameWon ? modeState.scores : resetScores,
+    sets: newSets,
+    legs: newLegs,
+    legStarterIndex: gameWon ? modeState.legStarterIndex : nextLegStarterIndex,
+    ...emptyStats(playerIds),
+    completedLegs: [...modeState.completedLegs, legRecord(modeState, winnerId)],
+  };
+
+  return {
+    state: {
+      ...state,
+      currentThrows: [],
+      currentPlayerIndex: gameWon ? state.currentPlayerIndex : nextLegStarterIndex,
+      status: gameWon ? 'finished' : state.status,
+      winner: gameWon ? winnerId : state.winner,
+      modeState: nextModeState,
+    },
+    gameWon,
   };
 }
 
@@ -156,48 +217,11 @@ export function applyX01Throw(
   let gameWon = false;
   let turnOver = false;
 
-  const playerIds = state.players.map((p) => p.id);
-
   if (legWon) {
-    // Turn ends with a finish. Commit stats for this turn (counting all throws of it).
     modeState = commitTurnStats(modeState, playerId, currentThrows, true);
-
-    const newLegs = { ...modeState.legs, [playerId]: modeState.legs[playerId]! + 1 };
-    let newSets = modeState.sets;
-    if (newLegs[playerId]! >= config.legsPerSet) {
-      newSets = { ...newSets, [playerId]: newSets[playerId]! + 1 };
-      for (const pid of Object.keys(newLegs)) newLegs[pid] = 0;
-      if (newSets[playerId]! >= config.sets) gameWon = true;
-    }
-
-    const resetScores: Record<string, number> = {};
-    for (const p of state.players) resetScores[p.id] = startScore;
-    const nextLegStarterIndex = (modeState.legStarterIndex + 1) % state.players.length;
-
-    modeState = {
-      mode: 'x01',
-      scores: gameWon ? modeState.scores : resetScores,
-      sets: newSets,
-      legs: newLegs,
-      legStarterIndex: gameWon ? modeState.legStarterIndex : nextLegStarterIndex,
-      ...(gameWon
-        ? {
-            dartsThrown: modeState.dartsThrown,
-            scoredInLeg: modeState.scoredInLeg,
-            first9Score: modeState.first9Score,
-            first9Darts: modeState.first9Darts,
-          }
-        : emptyStats(playerIds)),
-    };
-
-    nextState = {
-      ...state,
-      currentThrows: [],
-      currentPlayerIndex: gameWon ? state.currentPlayerIndex : nextLegStarterIndex,
-      status: gameWon ? 'finished' : 'active',
-      winner: gameWon ? playerId : undefined,
-      modeState,
-    };
+    const finished = finishX01Leg(state, modeState, playerId);
+    nextState = finished.state;
+    gameWon = finished.gameWon;
     turnOver = true;
   } else if (bust || currentThrows.length >= 3) {
     // Turn ends; commit dart count, commit score only if no bust.

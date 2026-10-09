@@ -13,6 +13,7 @@ import type {
   X01ModeState,
 } from '@darts/shared';
 import type { ApplyThrowResult } from './types.js';
+import { finishX01Leg } from './x01.js';
 
 export interface TurnInput {
   total: number;
@@ -126,7 +127,6 @@ function applyX01Turn(
   // Stat updates: score adds to scoredInLeg / first9 only when the turn
   // didn't bust.
   const turnScore = bust ? 0 : total;
-  const playerIds = state.players.map((p) => p.id);
 
   const dartsAfter = (ms.dartsThrown[playerId] ?? 0) + turnDarts;
   const scoredAfter = (ms.scoredInLeg[playerId] ?? 0) + turnScore;
@@ -144,7 +144,7 @@ function applyX01Turn(
     f9Darts += slots;
   }
 
-  let modeState: X01ModeState = {
+  const modeState: X01ModeState = {
     ...ms,
     scores: { ...ms.scores, [playerId]: bust ? before : newScore },
     dartsThrown: { ...ms.dartsThrown, [playerId]: dartsAfter },
@@ -153,50 +153,7 @@ function applyX01Turn(
     first9Score: { ...ms.first9Score, [playerId]: f9Score },
   };
 
-  let gameWon = false;
-  let nextPlayerIndex = (state.currentPlayerIndex + 1) % state.players.length;
-  let status = state.status;
-  let winner = state.winner;
-
-  if (legWon) {
-    const newLegs = { ...modeState.legs, [playerId]: modeState.legs[playerId]! + 1 };
-    let newSets = modeState.sets;
-    if (newLegs[playerId]! >= config.legsPerSet) {
-      newSets = { ...newSets, [playerId]: newSets[playerId]! + 1 };
-      for (const pid of Object.keys(newLegs)) newLegs[pid] = 0;
-      if (newSets[playerId]! >= config.sets) gameWon = true;
-    }
-    const resetScores: Record<string, number> = {};
-    for (const p of state.players) resetScores[p.id] = startScore;
-    const nextLegStarter = (modeState.legStarterIndex + 1) % state.players.length;
-    // Reset per-leg stats unless the whole game ended.
-    const resetStats = !gameWon
-      ? {
-          dartsThrown: Object.fromEntries(playerIds.map((id) => [id, 0])) as Record<string, number>,
-          scoredInLeg: Object.fromEntries(playerIds.map((id) => [id, 0])) as Record<string, number>,
-          first9Darts: Object.fromEntries(playerIds.map((id) => [id, 0])) as Record<string, number>,
-          first9Score: Object.fromEntries(playerIds.map((id) => [id, 0])) as Record<string, number>,
-        }
-      : {
-          dartsThrown: modeState.dartsThrown,
-          scoredInLeg: modeState.scoredInLeg,
-          first9Darts: modeState.first9Darts,
-          first9Score: modeState.first9Score,
-        };
-    modeState = {
-      mode: 'x01',
-      scores: gameWon ? modeState.scores : resetScores,
-      sets: newSets,
-      legs: newLegs,
-      legStarterIndex: gameWon ? modeState.legStarterIndex : nextLegStarter,
-      ...resetStats,
-    };
-    nextPlayerIndex = gameWon ? state.currentPlayerIndex : nextLegStarter;
-    if (gameWon) {
-      status = 'finished';
-      winner = playerId;
-    }
-  }
+  if (legWon) return { ...finishX01Leg(state, modeState, playerId), turnOver: true };
 
   // IMPORTANT: clear currentThrows. The turn-total path doesn't produce real
   // per-dart entries — leaving a synthetic display throw here would let it
@@ -208,12 +165,10 @@ function applyX01Turn(
       ...state,
       modeState,
       currentThrows: [],
-      currentPlayerIndex: nextPlayerIndex,
-      status,
-      winner,
+      currentPlayerIndex: (state.currentPlayerIndex + 1) % state.players.length,
     },
     turnOver: true,
-    gameWon,
+    gameWon: false,
   };
 }
 

@@ -1,0 +1,45 @@
+<section class="leg-history" aria-labelledby="leg-history-title">
+  <header class="head">
+    <span class="eyebrow">Match report</span>
+    <h2 id="leg-history-title" class="title">Average per leg</h2>
+  </header>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th scope="col" class="leg-col">Leg</th>
+          @for (player of players(); track player.id) {
+            <th scope="col">{{ player.name }}</th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of rows(); track row.number) {
+          <tr [style.animation-delay.ms]="row.number * 60">
+            <th scope="row" class="leg-col">{{ row.number }}</th>
+            @for (cell of row.cells; track cell.playerId) {
+              <td [class.won]="cell.won">
+                <span class="avg">{{ cell.average }}</span>
+                <span class="darts">
+                  {{ cell.darts }} darts
+                  @if (cell.won) {
+                    <span class="won-tag">won</span>
+                  }
+                </span>
+              </td>
+            }
+          </tr>
+        }
+      </tbody>
+      <tfoot>
+        <tr>
+          <th scope="row" class="leg-col">Match</th>
+          @for (average of matchAverages(); track $index) {
+            <td><span class="avg">{{ average }}</span></td>
+          }
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</section>

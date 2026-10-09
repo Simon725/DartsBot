@@ -4,11 +4,12 @@ import type { CheckoutMode, Throw } from '@darts/shared';
 import { GameStateService } from '../../core/game-state.service';
 import { ScoreboardComponent } from './scoreboard/scoreboard.component';
 import { ThrowInputComponent } from './throw-input/throw-input.component';
+import { LegHistoryComponent } from './leg-history/leg-history.component';
 
 @Component({
   selector: 'app-game',
   standalone: true,
-  imports: [ScoreboardComponent, ThrowInputComponent, RouterLink],
+  imports: [ScoreboardComponent, ThrowInputComponent, LegHistoryComponent, RouterLink],
   templateUrl: './game.component.html',
   styleUrl: './game.component.css',
 })
@@ -25,6 +26,11 @@ export class GameComponent implements OnInit {
   readonly currentPlayer = computed(() => {
     const s = this.state();
     return s ? (s.players[s.currentPlayerIndex] ?? null) : null;
+  });
+
+  readonly showLegHistory = computed(() => {
+    const s = this.state();
+    return s?.status === 'finished' && s.modeState.mode === 'x01';
   });
 
   readonly title = computed(() => {

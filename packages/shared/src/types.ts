@@ -118,6 +118,16 @@ export interface X01ModeState {
   first9Score: Record<string, number>;
   /** Number of legal darts (capped at 9) counted toward first9Score. */
   first9Darts: Record<string, number>;
+  /** Per-leg stats of every finished leg, oldest first. Includes the final leg once the game ends. */
+  completedLegs: X01LegRecord[];
+}
+
+export interface X01LegRecord {
+  winnerId: string;
+  dartsThrown: Record<string, number>;
+  scored: Record<string, number>;
+  first9Score: Record<string, number>;
+  first9Darts: Record<string, number>;
 }
 
 export type CricketNumber = 15 | 16 | 17 | 18 | 19 | 20 | 25;

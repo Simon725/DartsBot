@@ -1,0 +1,115 @@
+:host { display: block; }
+
+.leg-history {
+  margin-top: 1rem;
+  padding: 1rem 1.1rem 1.1rem;
+  background: linear-gradient(180deg, var(--bg-elev) 0%, var(--bg) 100%);
+  border: 1px solid var(--bg-line);
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+  animation: fade-up 0.5s var(--ease-out) both;
+}
+
+.leg-history::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--brass), transparent);
+  opacity: 0.7;
+}
+
+.head { margin-bottom: 0.75rem; }
+
+.eyebrow {
+  font-size: 0.62rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--brass);
+  font-weight: 700;
+}
+
+.title {
+  margin: 0.15rem 0 0;
+  font-family: var(--font-display);
+  font-size: 1.7rem;
+  letter-spacing: 0.03em;
+  color: var(--cream);
+  line-height: 1;
+}
+
+.table-wrap { overflow-x: auto; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+th, td {
+  padding: 0.5rem 0.6rem;
+  text-align: center;
+  border-bottom: 1px solid var(--bg-line);
+}
+
+thead th {
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  font-weight: 600;
+}
+
+.leg-col {
+  width: 4rem;
+  text-align: left;
+  color: var(--ink-faint);
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+tbody tr {
+  animation: fade-up 0.4s var(--ease-out) both;
+  transition: background 0.2s;
+}
+
+tbody tr:hover { background: rgba(200, 165, 87, 0.05); }
+
+.avg {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  letter-spacing: 0.04em;
+  color: var(--cream);
+  line-height: 1;
+}
+
+.darts {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.2rem;
+  font-size: 0.68rem;
+  color: var(--ink-faint);
+}
+
+td.won .avg { color: var(--brass); }
+
+.won-tag {
+  padding: 0.05rem 0.35rem;
+  border: 1px solid var(--brass-deep);
+  border-radius: 999px;
+  color: var(--brass);
+  font-size: 0.58rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+tfoot th, tfoot td {
+  border-bottom: none;
+  border-top: 2px solid var(--bg-line);
+}
+
+tfoot .avg { color: var(--brass); font-size: 1.55rem; }

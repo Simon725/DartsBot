@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { OneTwoOneConfig, Player, X01Config } from '@darts/shared';
+import { x01MatchTotals, type OneTwoOneConfig, type Player, type X01Config } from '@darts/shared';
 import { applyThrow, createGame } from './index.js';
 import { applyTurnTotal } from './turn.js';
 
@@ -95,24 +95,41 @@ describe('x01 per-dart stats', () => {
     expect(x01(r.state).first9Score['p1']).toBe(0);
   });
 
-  it('stats reset on leg change (not on game end)', () => {
-    let s = createGame({ ...x01Cfg, legsPerSet: 2 }, [p1, p2]);
+  it('archives the leg stats and resets the leg counters on leg change', () => {
+    const s = createGame({ ...x01Cfg, legsPerSet: 2 }, [p1, p2]);
     if (s.modeState.mode === 'x01') s.modeState.scores['p1'] = 40;
-    // Win leg 1 with D20.
     const r = applyThrow(s, 'p1', { segment: 20, multiplier: 2 });
-    // After leg won (game still active), stats reset for the new leg.
     expect(x01(r.state).dartsThrown).toEqual({ p1: 0, p2: 0 });
     expect(x01(r.state).scoredInLeg).toEqual({ p1: 0, p2: 0 });
+    expect(x01(r.state).completedLegs).toHaveLength(1);
+    expect(x01(r.state).completedLegs[0]!.winnerId).toBe('p1');
+    expect(x01(r.state).completedLegs[0]!.dartsThrown['p1']).toBe(1);
+    expect(x01(r.state).completedLegs[0]!.scored['p1']).toBe(40);
   });
 
-  it('stats persist when the game ends', () => {
-    let s = createGame({ ...x01Cfg, legsPerSet: 1 }, [p1, p2]);
+  it('archives the final leg when the game ends', () => {
+    const s = createGame({ ...x01Cfg, legsPerSet: 1 }, [p1, p2]);
     if (s.modeState.mode === 'x01') s.modeState.scores['p1'] = 40;
     const r = applyThrow(s, 'p1', { segment: 20, multiplier: 2 });
     expect(r.gameWon).toBe(true);
-    // Stats kept so the final scoreboard has something to show.
-    expect(x01(r.state).dartsThrown['p1']).toBeGreaterThanOrEqual(1);
-    expect(x01(r.state).scoredInLeg['p1']).toBe(40);
+    expect(x01(r.state).completedLegs).toHaveLength(1);
+    expect(x01(r.state).completedLegs[0]!.scored['p1']).toBe(40);
+  });
+
+  it('match totals span every leg', () => {
+    let s = createGame({ ...x01Cfg, legsPerSet: 3 }, [p1, p2]);
+    if (s.modeState.mode === 'x01') s.modeState.scores['p1'] = 40;
+    s = applyThrow(s, 'p1', { segment: 20, multiplier: 2 }).state;
+    // Leg 2: p2 starts and throws 60.
+    s = applyThrow(s, 'p2', { segment: 20, multiplier: 1 }).state;
+    s = applyThrow(s, 'p2', { segment: 20, multiplier: 1 }).state;
+    s = applyThrow(s, 'p2', { segment: 20, multiplier: 1 }).state;
+    // p1 throws 180 in leg 2.
+    s = applyThrow(s, 'p1', { segment: 20, multiplier: 3 }).state;
+    s = applyThrow(s, 'p1', { segment: 20, multiplier: 3 }).state;
+    s = applyThrow(s, 'p1', { segment: 20, multiplier: 3 }).state;
+    expect(x01MatchTotals(x01(s), 'p1')).toEqual({ darts: 4, scored: 220, first9Darts: 4, first9Score: 220 });
+    expect(x01MatchTotals(x01(s), 'p2')).toEqual({ darts: 3, scored: 60, first9Darts: 3, first9Score: 60 });
   });
 
   it('double-in: rejected opening darts count as thrown but score nothing', () => {
@@ -162,17 +179,15 @@ describe('x01 turn-total stats', () => {
   });
 
   it('a 2-dart finish adds exactly 2 to dartsThrown and fills 2 first-9 slots', () => {
-    // legsPerSet 1 so the game ends on the checkout and stats are preserved.
-    let s = createGame({ ...x01Cfg, legsPerSet: 1 }, [p1, p2]);
+    const s = createGame({ ...x01Cfg, legsPerSet: 1 }, [p1, p2]);
     if (s.modeState.mode === 'x01') s.modeState.scores['p1'] = 40;
     const r = applyTurnTotal(s, 'p1', { total: 40, checkoutDarts: 2 });
     expect(r.gameWon).toBe(true);
-    if (r.state.modeState.mode === 'x01') {
-      expect(r.state.modeState.dartsThrown['p1']).toBe(2);
-      expect(r.state.modeState.scoredInLeg['p1']).toBe(40);
-      expect(r.state.modeState.first9Darts['p1']).toBe(2);
-      expect(r.state.modeState.first9Score['p1']).toBe(40);
-    }
+    const leg = x01(r.state).completedLegs[0]!;
+    expect(leg.dartsThrown['p1']).toBe(2);
+    expect(leg.scored['p1']).toBe(40);
+    expect(leg.first9Darts['p1']).toBe(2);
+    expect(leg.first9Score['p1']).toBe(40);
   });
 });
 

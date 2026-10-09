@@ -1,5 +1,12 @@
 import { Component, input } from '@angular/core';
-import { getCheckout, type CheckoutSuggestion, type CricketNumber, type GameState } from '@darts/shared';
+import {
+  getCheckout,
+  threeDartAverage,
+  x01MatchTotals,
+  type CheckoutSuggestion,
+  type CricketNumber,
+  type GameState,
+} from '@darts/shared';
 import { RollingNumberComponent } from '../../../shared/rolling-number.component';
 import { SpotlightDirective } from '../../../shared/spotlight.directive';
 
@@ -104,68 +111,47 @@ export class ScoreboardComponent {
     return n.toFixed(2);
   }
 
-  /**
-   * Includes in-flight throws so the displayed avg updates dart-by-dart
-   * for the active player (rather than only at turn boundaries).
-   */
-  private liveDartsAndScore(
-    state: GameState,
-    playerId: string,
-    committedDarts: number,
-    committedScore: number,
-  ): { darts: number; score: number } {
-    const cur = state.players[state.currentPlayerIndex];
-    if (!cur || cur.id !== playerId) return { darts: committedDarts, score: committedScore };
-    let extraDarts = 0;
-    let extraScore = 0;
-    for (const t of state.currentThrows) {
-      extraDarts += 1;
-      if (t.isValid) extraScore += t.score;
-    }
-    return { darts: committedDarts + extraDarts, score: committedScore + extraScore };
+  private isThrowing(state: GameState, playerId: string): boolean {
+    return state.status === 'active' && state.players[state.currentPlayerIndex]?.id === playerId;
   }
 
-  /** x01 3-dart avg = scoredInLeg / dartsThrown * 3, including in-flight darts. */
+  /** Match-wide 3-dart avg across every leg, including in-flight darts. */
   x01Avg(state: GameState, playerId: string): string {
     if (state.modeState.mode !== 'x01') return '-';
-    const ms = state.modeState;
-    const { darts, score } = this.liveDartsAndScore(
-      state,
-      playerId,
-      ms.dartsThrown[playerId] ?? 0,
-      ms.scoredInLeg[playerId] ?? 0,
-    );
-    if (darts === 0) return '-';
-    return this.fmt2((score / darts) * 3);
+    let { darts, scored } = x01MatchTotals(state.modeState, playerId);
+    if (this.isThrowing(state, playerId)) {
+      for (const t of state.currentThrows) {
+        darts += 1;
+        if (t.isValid) scored += t.score;
+      }
+    }
+    return this.fmt2(threeDartAverage(scored, darts));
   }
 
-  /** x01 first-9 avg = first9Score / first9Darts * 3 (in-flight aware up to 9 darts). */
+  /** Match-wide first-9 avg; in-flight darts count only within the current leg's first 9. */
   x01First9Avg(state: GameState, playerId: string): string {
     if (state.modeState.mode !== 'x01') return '-';
     const ms = state.modeState;
-    const committedDarts = ms.first9Darts[playerId] ?? 0;
-    const committedScore = ms.first9Score[playerId] ?? 0;
-    const cur = state.players[state.currentPlayerIndex];
-    let liveDarts = committedDarts;
-    let liveScore = committedScore;
-    if (cur?.id === playerId && committedDarts < 9) {
+    let { first9Darts, first9Score } = x01MatchTotals(ms, playerId);
+    if (this.isThrowing(state, playerId)) {
+      let legDarts = ms.first9Darts[playerId] ?? 0;
       for (const t of state.currentThrows) {
-        if (liveDarts >= 9) break;
-        liveDarts += 1;
-        if (t.isValid) liveScore += t.score;
+        if (legDarts >= 9) break;
+        legDarts += 1;
+        first9Darts += 1;
+        if (t.isValid) first9Score += t.score;
       }
     }
-    if (liveDarts === 0) return '-';
-    return this.fmt2((liveScore / liveDarts) * 3);
+    return this.fmt2(threeDartAverage(first9Score, first9Darts));
   }
 
-  /** x01 darts thrown this leg, including in-flight darts of the active turn. */
+  /** Darts thrown in the current leg; the final leg's count once the game is over. */
   x01Darts(state: GameState, playerId: string): number {
     if (state.modeState.mode !== 'x01') return 0;
-    const committed = state.modeState.dartsThrown[playerId] ?? 0;
-    const cur = state.players[state.currentPlayerIndex];
-    if (cur?.id === playerId) return committed + state.currentThrows.length;
-    return committed;
+    const ms = state.modeState;
+    if (state.status === 'finished') return ms.completedLegs.at(-1)?.dartsThrown[playerId] ?? 0;
+    const committed = ms.dartsThrown[playerId] ?? 0;
+    return this.isThrowing(state, playerId) ? committed + state.currentThrows.length : committed;
   }
 
   /** 121: total darts across the drill. */
