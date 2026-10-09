@@ -18,6 +18,7 @@
       @for (m of modeOptions; track m.value; let i = $index) {
         <button
           type="button"
+          appSpotlight
           class="mode-card"
           [class.active]="mode() === m.value"
           (click)="mode.set(m.value)"
@@ -32,7 +33,7 @@
   </fieldset>
 
   @if (mode() === 'x01') {
-    <fieldset class="card">
+    <fieldset appSpotlight class="card">
       <legend class="legend"><span class="legend-num">02</span><span>x01 settings</span></legend>
       <div class="grid-form">
         <label class="field">
@@ -72,7 +73,7 @@
   }
 
   @if (mode() === '121') {
-    <fieldset class="card">
+    <fieldset appSpotlight class="card">
       <legend class="legend"><span class="legend-num">02</span><span>121 drill</span></legend>
       <div class="grid-form">
         <label class="field">
@@ -106,14 +107,14 @@
       <p class="hint">
         Solo practice. Start at 121, check out on a double within the dart limit.
         Each successful checkout raises the target by 1. A failed attempt drops the
-        target back one (never below 121) or keeps it, depending on your setting —
-        the drill runs until you end it.
+        target back one (never below 121) or keeps it, depending on your setting.
+        The drill runs until you end it.
       </p>
     </fieldset>
   }
 
   @if (mode() === 'shanghai') {
-    <fieldset class="card">
+    <fieldset appSpotlight class="card">
       <legend class="legend"><span class="legend-num">02</span><span>Shanghai rounds</span></legend>
       <div class="grid-form">
         <label class="field">
@@ -128,7 +129,7 @@
   }
 
   @if (mode() === 'killer') {
-    <fieldset class="card">
+    <fieldset appSpotlight class="card">
       <legend class="legend"><span class="legend-num">02</span><span>Killer settings</span></legend>
       <div class="grid-form">
         <label class="field">
@@ -139,7 +140,7 @@
     </fieldset>
   }
 
-  <fieldset class="card">
+  <fieldset appSpotlight class="card">
     <legend class="legend">
       <span class="legend-num">{{ mode() === 'cricket' || mode() === 'around-the-clock' ? '02' : '03' }}</span>
       <span>{{ isSinglePlayer() ? 'Player' : 'Players' }}</span>
@@ -230,16 +231,18 @@
     </div>
   </fieldset>
 
-  <button type="button" class="start" (click)="start()" [disabled]="creating() || startBlockedReason() !== null">
-    <span class="start-label">{{ creating() ? 'Throwing for bull…' : 'Start game' }}</span>
-    <span class="start-arrow" aria-hidden="true">→</span>
-  </button>
+  <div class="start-bar">
+    @if (startBlockedReason(); as reason) {
+      <p class="error">{{ reason }}</p>
+    }
 
-  @if (startBlockedReason(); as reason) {
-    <p class="error">{{ reason }}</p>
-  }
+    @if (errorMessage()) {
+      <p class="error">{{ errorMessage() }}</p>
+    }
 
-  @if (errorMessage()) {
-    <p class="error">{{ errorMessage() }}</p>
-  }
+    <button type="button" class="start" (click)="start()" [disabled]="creating() || startBlockedReason() !== null">
+      <span class="start-label">{{ creating() ? 'Throwing for bull…' : 'Start game' }}</span>
+      <span class="start-arrow" aria-hidden="true">→</span>
+    </button>
+  </div>
 </section>

@@ -1,5 +1,17 @@
-<div class="throw-input" [class.disabled]="disabled()">
-  <div class="mode-tabs" role="tablist" aria-label="Input method">
+<div
+  class="throw-input"
+  appSpotlight
+  [class.disabled]="disabled()"
+  [attr.data-armed]="selectedMultiplier()"
+>
+  <div
+    class="mode-tabs"
+    role="tablist"
+    aria-label="Input method"
+    [style.--index]="activeTabIndex()"
+    [style.--count]="modeTabs().length"
+  >
+    <span class="slide-pill tab-pill" aria-hidden="true"></span>
     @for (tab of modeTabs(); track tab.key) {
       <button
         type="button"
@@ -18,7 +30,15 @@
   </div>
 
   @if (inputMode() === 'board' || inputMode() === 'numeric') {
-    <div class="multipliers" role="radiogroup" aria-label="Throw multiplier">
+    <div
+      class="multipliers"
+      role="radiogroup"
+      aria-label="Throw multiplier"
+      [style.--index]="selectedMultiplier() - 1"
+      [style.--count]="multipliers.length"
+      [attr.data-selected]="selectedMultiplier()"
+    >
+      <span class="slide-pill mult-pill" aria-hidden="true"></span>
       @for (m of multipliers; track m.key) {
         <button
           type="button"
@@ -35,7 +55,7 @@
             @switch (m.key) {
               @case (1) { single }
               @case (2) { double }
-              @case (3) { triple }
+              @case (3) { treble }
             }
           </span>
           <span class="mult-x">×{{ m.key }}</span>
@@ -58,12 +78,12 @@
 
     <div class="specials">
       <button type="button" class="seg bull" (click)="submitSegment(25)" [disabled]="disabled()">
-        <span class="seg-num">25</span>
+        <span class="seg-num">{{ bullScore() }}</span>
         <span class="seg-label">bull</span>
       </button>
       <button type="button" class="seg miss" (click)="submitMiss()" [disabled]="disabled()">
-        <span class="seg-num">∅</span>
-        <span class="seg-label">miss</span>
+        <span class="seg-num">Miss</span>
+        <span class="seg-label">no score</span>
       </button>
     </div>
   }
@@ -82,7 +102,7 @@
           (ngModelChange)="totalScore.set($event)"
           (keydown.enter)="submitTotal()"
           [disabled]="disabled()"
-          placeholder="0–180"
+          placeholder="0 to 180"
         />
       </label>
       @if (totalError(); as err) {
@@ -111,7 +131,7 @@
       <dialog
         #checkoutDialogEl
         class="checkout-overlay"
-        attr.aria-label="Checkout {{ checkout.remaining }} — how many darts?"
+        attr.aria-label="Checkout {{ checkout.remaining }}: how many darts?"
         (cancel)="$event.preventDefault(); cancelCheckout()"
         (click)="onCheckoutOverlayClick($event)"
         (keydown.escape)="cancelCheckout()"

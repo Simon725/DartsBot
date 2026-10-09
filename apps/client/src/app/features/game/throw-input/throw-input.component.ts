@@ -9,6 +9,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { SpotlightDirective } from '../../../shared/spotlight.directive';
 import {
   IMPOSSIBLE_TURN_TOTALS,
   checkoutDartOptions,
@@ -36,7 +37,7 @@ const STORAGE_KEY = 'oche:input-mode';
 @Component({
   selector: 'app-throw-input',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, SpotlightDirective],
   templateUrl: './throw-input.component.html',
   styleUrl: './throw-input.component.css',
 })
@@ -76,6 +77,7 @@ export class ThrowInputComponent {
   ];
 
   readonly selectedMultiplier = signal<1 | 2 | 3>(1);
+  readonly bullScore = computed(() => (this.selectedMultiplier() === 1 ? 25 : 50));
 
   // Total mode state.
   readonly totalScore = signal<number | null>(null);
@@ -135,7 +137,7 @@ export class ThrowInputComponent {
     if (total < 0 || total > 180) return 'A turn scores between 0 and 180.';
     if (this.isCheckoutTotal()) {
       if (this.rawCheckoutOptions().length === 0) {
-        return `${this.remaining()} cannot be checked out — no finish from there`;
+        return `${this.remaining()} cannot be checked out: no finish from there`;
       }
       if (this.checkoutOptions().length === 0) {
         return 'not enough darts left in this attempt';
@@ -162,6 +164,10 @@ export class ThrowInputComponent {
       },
     ];
   });
+
+  readonly activeTabIndex = computed(() =>
+    Math.max(0, this.modeTabs().findIndex((tab) => tab.key === this.inputMode())),
+  );
 
   constructor() {
     effect(() => {

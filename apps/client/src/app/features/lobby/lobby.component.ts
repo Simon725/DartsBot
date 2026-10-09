@@ -13,6 +13,7 @@ import {
   type Player,
 } from '@darts/shared';
 import { GameStateService } from '../../core/game-state.service';
+import { SpotlightDirective } from '../../shared/spotlight.directive';
 
 type BotPresetChoice = BotDifficulty | 'custom';
 
@@ -58,7 +59,7 @@ function humanDraft(name: string): PlayerDraft {
 @Component({
   selector: 'app-lobby',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, SpotlightDirective],
   templateUrl: './lobby.component.html',
   styleUrl: './lobby.component.css',
 })

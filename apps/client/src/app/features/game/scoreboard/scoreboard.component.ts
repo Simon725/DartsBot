@@ -1,9 +1,12 @@
 import { Component, input } from '@angular/core';
 import { getCheckout, type CheckoutSuggestion, type CricketNumber, type GameState } from '@darts/shared';
+import { RollingNumberComponent } from '../../../shared/rolling-number.component';
+import { SpotlightDirective } from '../../../shared/spotlight.directive';
 
 @Component({
   selector: 'app-scoreboard',
   standalone: true,
+  imports: [RollingNumberComponent, SpotlightDirective],
   templateUrl: './scoreboard.component.html',
   styleUrl: './scoreboard.component.css',
 })
@@ -30,6 +33,17 @@ export class ScoreboardComponent {
         // Hero number in 121 is the checkout count (the player's score).
         return String(ms.checkouts);
     }
+  }
+
+  rollsScore(state: GameState): boolean {
+    const mode = state.modeState.mode;
+    return mode === 'x01' || mode === 'cricket' || mode === 'shanghai';
+  }
+
+  multiplierLetter(multiplier: number): string {
+    if (multiplier === 3) return 'T';
+    if (multiplier === 2) return 'D';
+    return 'S';
   }
 
   legAndSetVisible(state: GameState): boolean {
@@ -84,9 +98,9 @@ export class ScoreboardComponent {
     return state.modeState.mode === '121' && state.modeState.dartsUsed === 0;
   }
 
-  /** Formats a number to 2 decimals, or '—' when undefined. */
+  /** Formats a number to 2 decimals, or '-' when undefined. */
   private fmt2(n: number | null): string {
-    if (n === null || !Number.isFinite(n)) return '—';
+    if (n === null || !Number.isFinite(n)) return '-';
     return n.toFixed(2);
   }
 
@@ -113,7 +127,7 @@ export class ScoreboardComponent {
 
   /** x01 3-dart avg = scoredInLeg / dartsThrown * 3, including in-flight darts. */
   x01Avg(state: GameState, playerId: string): string {
-    if (state.modeState.mode !== 'x01') return '—';
+    if (state.modeState.mode !== 'x01') return '-';
     const ms = state.modeState;
     const { darts, score } = this.liveDartsAndScore(
       state,
@@ -121,13 +135,13 @@ export class ScoreboardComponent {
       ms.dartsThrown[playerId] ?? 0,
       ms.scoredInLeg[playerId] ?? 0,
     );
-    if (darts === 0) return '—';
+    if (darts === 0) return '-';
     return this.fmt2((score / darts) * 3);
   }
 
   /** x01 first-9 avg = first9Score / first9Darts * 3 (in-flight aware up to 9 darts). */
   x01First9Avg(state: GameState, playerId: string): string {
-    if (state.modeState.mode !== 'x01') return '—';
+    if (state.modeState.mode !== 'x01') return '-';
     const ms = state.modeState;
     const committedDarts = ms.first9Darts[playerId] ?? 0;
     const committedScore = ms.first9Score[playerId] ?? 0;
@@ -141,7 +155,7 @@ export class ScoreboardComponent {
         if (t.isValid) liveScore += t.score;
       }
     }
-    if (liveDarts === 0) return '—';
+    if (liveDarts === 0) return '-';
     return this.fmt2((liveScore / liveDarts) * 3);
   }
 
@@ -161,9 +175,9 @@ export class ScoreboardComponent {
 
   /** 121: darts per checkout (lifetime). */
   oneTwoOneDartsPerCheckout(state: GameState): string {
-    if (state.modeState.mode !== '121') return '—';
+    if (state.modeState.mode !== '121') return '-';
     const ms = state.modeState;
-    if (ms.checkouts === 0) return '—';
+    if (ms.checkouts === 0) return '-';
     return this.fmt2(ms.totalDartsThrown / ms.checkouts);
   }
 

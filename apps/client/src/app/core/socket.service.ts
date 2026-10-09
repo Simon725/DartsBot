@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
@@ -9,6 +9,13 @@ export class SocketService {
   private socket: Socket = environment.serverUrl
     ? io(environment.serverUrl, { autoConnect: true })
     : io({ autoConnect: true });
+
+  readonly connected = signal(this.socket.connected);
+
+  constructor() {
+    this.socket.on('connect', () => this.connected.set(true));
+    this.socket.on('disconnect', () => this.connected.set(false));
+  }
 
   emit<T = unknown>(event: string, payload: T): void {
     this.socket.emit(event, payload);

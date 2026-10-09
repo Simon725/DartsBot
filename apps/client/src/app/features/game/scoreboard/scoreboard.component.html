@@ -8,7 +8,16 @@
 
 <div class="scoreboard">
   @for (player of state().players; track player.id; let i = $index) {
-    <article class="player" [class.active]="i === state().currentPlayerIndex" [style.animation-delay]="(i * 80) + 'ms'">
+    <article
+      class="player"
+      appSpotlight
+      [class.active]="i === state().currentPlayerIndex"
+      [class.border-beam]="i === state().currentPlayerIndex"
+      [style.animation-delay]="(i * 80) + 'ms'"
+    >
+      @if (i === state().currentPlayerIndex) {
+        <span class="active-flag" aria-hidden="true"></span>
+      }
       <header class="player-head">
         <div class="player-id">
           <span class="player-slot">P{{ i + 1 }}</span>
@@ -41,7 +50,7 @@
             @if (i === state().currentPlayerIndex) {
               <span class="aim-mark" aria-hidden="true">▸</span>
             }
-            <span class="score">{{ oneTwoOneRemaining(state()) }}</span>
+            <span class="score"><app-rolling-number [value]="oneTwoOneRemaining(state()) ?? 0" /></span>
           </div>
           <div class="score-strip">
             <div class="score-chip">
@@ -77,7 +86,13 @@
           @if (i === state().currentPlayerIndex) {
             <span class="aim-mark" aria-hidden="true">▸</span>
           }
-          <span class="score" [attr.data-score]="scoreFor(state(), player.id)">{{ scoreFor(state(), player.id) }}</span>
+          <span class="score" [attr.data-score]="scoreFor(state(), player.id)">
+            @if (rollsScore(state())) {
+              <app-rolling-number [value]="scoreFor(state(), player.id)" />
+            } @else {
+              {{ scoreFor(state(), player.id) }}
+            }
+          </span>
         </div>
       }
 
@@ -85,7 +100,7 @@
         <div class="checkout" [class.bogey]="co.isBogey">
           <span class="checkout-label">Checkout</span>
           @if (co.isBogey) {
-            <span class="checkout-bogey">Bogey — no 3-dart finish</span>
+            <span class="checkout-bogey">Bogey. No 3-dart finish.</span>
           } @else if (co.route) {
             <ol class="checkout-route">
               @for (step of co.route; track $index) {
@@ -144,20 +159,30 @@
       @if (i === state().currentPlayerIndex) {
         <div class="throws">
           @for (t of state().currentThrows; track $index) {
-            <span class="throw" [class.invalid]="!t.isValid" [class.special]="t.multiplier === 3">
+            <span
+              class="throw"
+              [class.invalid]="!t.isValid"
+              [class.special]="t.multiplier === 3"
+              [class.double]="t.multiplier === 2"
+            >
               @if (t.segment === 0) {
                 <span class="throw-val">MISS</span>
               } @else {
-                <span class="throw-val">
-                  {{ t.multiplier === 2 ? 'D' : t.multiplier === 3 ? 'T' : 'S' }}{{ t.segment }}
-                </span>
+                <span class="throw-val"
+                  ><span
+                    class="throw-mult"
+                    [class.treble]="t.multiplier === 3"
+                    [class.double]="t.multiplier === 2"
+                    >{{ multiplierLetter(t.multiplier) }}</span
+                  >{{ t.segment }}</span
+                >
                 <span class="throw-sub">{{ t.score }}</span>
               }
             </span>
           }
           @for (_ of [].constructor(3 - state().currentThrows.length); track $index) {
-            <span class="throw empty">
-              <span class="throw-val">—</span>
+            <span class="throw empty" aria-label="Dart not thrown yet">
+              <span class="throw-val" aria-hidden="true">-</span>
             </span>
           }
         </div>

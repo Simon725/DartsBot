@@ -7,7 +7,7 @@
 .lobby {
   max-width: 920px;
   margin: 0 auto;
-  padding: 3.5rem 1.5rem 6rem;
+  padding: 3.5rem 1.5rem 0;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -74,6 +74,10 @@
   animation-delay: 0.05s;
 }
 
+.card.spotlight:hover::after {
+  opacity: 0.55;
+}
+
 .card::before {
   content: '';
   position: absolute;
@@ -108,7 +112,7 @@
 
 .modes {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.6rem;
   margin-top: 0.4rem;
 }
@@ -127,7 +131,7 @@
   font: inherit;
   cursor: pointer;
   overflow: hidden;
-  isolation: isolate;
+  min-height: 44px;
   transition: transform 0.25s var(--ease-thud),
               border-color 0.25s var(--ease-out),
               background 0.25s var(--ease-out);
@@ -151,6 +155,10 @@
 
 .mode-card:hover::before {
   opacity: 1;
+}
+
+.mode-card:active {
+  transform: translateY(0) scale(0.985);
 }
 
 .mode-card.active {
@@ -527,12 +535,28 @@ select {
 
 /* ── Start button ─────────────────────────── */
 
+.start-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin: 0.5rem 0 0;
+  padding: 1rem 0 1.25rem;
+  pointer-events: none;
+}
+
+.start-bar > * {
+  pointer-events: auto;
+}
+
 .start {
-  align-self: flex-start;
-  margin-top: 0.5rem;
   display: inline-flex;
   align-items: center;
   gap: 1rem;
+  min-height: 44px;
   padding: 1rem 1.6rem 1rem 1.8rem;
   background: var(--match-red);
   color: var(--cream);
@@ -542,30 +566,37 @@ select {
   letter-spacing: 0.1em;
   position: relative;
   overflow: hidden;
+  isolation: isolate;
+  cursor: pointer;
   transition: transform 0.25s var(--ease-thud), box-shadow 0.3s var(--ease-out);
-  box-shadow: 0 8px 32px -8px var(--match-red-glow);
+  box-shadow: 0 8px 32px -8px var(--match-red-glow), inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
 
 .start::before {
   content: '';
   position: absolute;
-  inset: 0;
-  background: linear-gradient(120deg, transparent 30%, rgba(255, 255, 255, 0.18) 50%, transparent 70%);
-  transform: translateX(-100%);
-  transition: transform 0.7s var(--ease-out);
+  top: -50%;
+  bottom: -50%;
+  left: 0;
+  width: 40%;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.32), transparent);
+  transform: translateX(-160%) skewX(-24deg);
 }
 
 .start:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 14px 38px -10px var(--match-red-glow);
+  box-shadow: 0 14px 38px -10px var(--match-red-glow), inset 0 1px 0 rgba(255, 255, 255, 0.22);
 }
 
 .start:hover:not(:disabled)::before {
-  transform: translateX(100%);
+  animation: start-shine 0.9s var(--ease-out);
 }
 
 .start:active:not(:disabled) {
-  transform: translateY(0);
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 6px 20px -8px var(--match-red-glow);
 }
 
 .start:disabled {
@@ -573,6 +604,15 @@ select {
   color: var(--ink-faint);
   box-shadow: none;
   cursor: not-allowed;
+}
+
+.start:disabled::before {
+  display: none;
+}
+
+@keyframes start-shine {
+  from { transform: translateX(-160%) skewX(-24deg); }
+  to { transform: translateX(320%) skewX(-24deg); }
 }
 
 .start-arrow {
@@ -590,11 +630,19 @@ select {
   font-size: 0.9rem;
   border-left: 2px solid var(--match-red);
   padding-left: 0.8rem;
-  margin: 0.2rem 0;
+  margin: 0;
 }
 
 @media (max-width: 640px) {
-  .lobby { padding: 2rem 1rem 4rem; }
+  .lobby { padding: 2rem 1rem 0; }
+  .card { padding: 1.25rem 1rem 1.3rem; }
+  .modes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .mode-card { padding: 0.9rem 0.9rem 0.8rem; }
+  .start-bar {
+    align-items: stretch;
+    padding: 0.75rem 0 1rem;
+  }
+  .start { justify-content: center; }
   .player-row {
     grid-template-columns: auto 1fr auto;
     grid-template-areas:

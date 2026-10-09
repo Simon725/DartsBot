@@ -8,7 +8,7 @@
   justify-content: center;
   gap: 1rem;
   padding: 0.8rem 1.2rem;
-  margin: 0 0 1.25rem;
+  margin: 0 0 1rem;
   border: 1px solid var(--bg-line);
   background: linear-gradient(180deg, rgba(36, 30, 28, 0.7), rgba(20, 16, 15, 0.6));
   border-radius: 10px;
@@ -54,58 +54,55 @@
 .scoreboard {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.1rem;
-  margin-bottom: 1.5rem;
+  gap: 1rem;
 }
 
 .player {
   position: relative;
   display: flex;
   flex-direction: column;
-  padding: 1.2rem 1.3rem 1.1rem;
+  min-width: 0;
+  padding: 1rem 1.2rem 1rem;
   background:
     linear-gradient(180deg, rgba(36, 30, 28, 0.7), rgba(20, 16, 15, 0.7));
   border: 1px solid var(--bg-line);
   border-radius: 14px;
-  overflow: hidden;
   isolation: isolate;
   animation: fade-up 0.55s var(--ease-out) both;
-  transition: border-color 0.4s var(--ease-out), transform 0.4s var(--ease-out);
+  transition: border-color 0.4s var(--ease-out), box-shadow 0.4s var(--ease-out);
 }
 
-.player::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background:
-    radial-gradient(ellipse 60% 50% at 0% 0%, rgba(200, 165, 87, 0.06), transparent 60%);
-  opacity: 0;
-  transition: opacity 0.5s var(--ease-out);
+.player:not(.active):hover {
+  border-color: rgba(200, 165, 87, 0.35);
 }
 
 .player.active {
-  border-color: var(--match-red);
+  border-color: rgba(210, 32, 45, 0.55);
+  background:
+    radial-gradient(ellipse 60% 50% at 0% 0%, rgba(200, 165, 87, 0.06), transparent 60%),
+    radial-gradient(ellipse 90% 60% at 50% 0%, rgba(210, 32, 45, 0.1), transparent 70%),
+    linear-gradient(180deg, rgba(40, 26, 24, 0.82), rgba(22, 14, 13, 0.82));
   box-shadow:
-    0 0 0 1px var(--match-red),
     0 18px 48px -18px var(--match-red-glow),
+    0 0 32px -8px rgba(210, 32, 45, 0.28),
     inset 0 0 60px -20px var(--match-red-glow);
 }
 
-.player.active::before {
-  opacity: 1;
+.player.active.spotlight::after {
+  content: none;
 }
 
-.player.active::after {
-  content: '';
+.active-flag {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
+  top: -1px;
+  left: 1.2rem;
+  width: 3.5rem;
   height: 3px;
+  border-radius: 0 0 3px 3px;
   background: var(--match-red);
   box-shadow: 0 0 12px var(--match-red);
   animation: flag-swipe 0.5s var(--ease-out);
+  pointer-events: none;
 }
 
 /* ── Player header ────────────────────────── */
@@ -219,6 +216,10 @@
   font-variant-numeric: tabular-nums;
   text-shadow: 0 0 32px rgba(241, 232, 211, 0.12);
   transition: color 0.3s var(--ease-out), text-shadow 0.3s var(--ease-out);
+}
+
+.score app-rolling-number {
+  vertical-align: baseline;
 }
 
 .player.active .score {
@@ -363,7 +364,30 @@
   border: 1px solid var(--bg-line);
   border-radius: 8px;
   font-family: var(--font-numeric);
-  animation: thud 0.3s var(--ease-thud);
+  animation: throw-land 0.38s var(--ease-thud);
+}
+
+@keyframes throw-land {
+  0% { transform: scale(1.18); opacity: 0; }
+  55% { transform: scale(0.95); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+.throw-mult {
+  color: var(--ink-mute);
+}
+
+.throw-mult.double {
+  color: var(--double);
+}
+
+.throw-mult.treble {
+  color: var(--treble);
+}
+
+.throw.double {
+  border-color: rgba(107, 142, 107, 0.6);
+  background: rgba(61, 90, 61, 0.14);
 }
 
 .throw-val {
@@ -387,7 +411,7 @@
 }
 
 .throw.special .throw-val {
-  color: var(--match-red);
+  color: var(--cream);
 }
 
 .throw.invalid .throw-val {
@@ -396,13 +420,14 @@
 }
 
 .throw.empty {
-  border-style: dashed;
-  background: transparent;
+  border: 1px dashed rgba(200, 165, 87, 0.35);
+  background: rgba(200, 165, 87, 0.03);
+  animation: none;
 }
 
 .throw.empty .throw-val {
-  color: var(--ink-faint);
-  opacity: 0.4;
+  color: var(--brass);
+  opacity: 0.45;
 }
 
 /* ── 121 drill hero block ─────────────────── */
@@ -627,5 +652,51 @@
 }
 
 @media (max-width: 640px) {
-  .scoreboard { grid-template-columns: 1fr; }
+  .scoreboard { grid-template-columns: 1fr; gap: 0.6rem; }
+
+  .round-banner { margin-bottom: 0.6rem; padding: 0.5rem 0.9rem; }
+  .round-banner-num { font-size: 1.7rem; }
+
+  .player { padding: 0.8rem 0.9rem; }
+  .player-head { margin-bottom: 0.3rem; }
+  .player-name { font-size: 1.3rem; }
+  .score { font-size: clamp(3.4rem, 17vw, 4.5rem); }
+  .score-block { margin: 0.1rem 0 0.5rem; }
+  .hero-121 { margin: 0.1rem 0 0.5rem; }
+  .score { font-size: 3.6rem; }
+  .meta-row { margin-bottom: 0.35rem; }
+  .stat { padding: 0.2rem 0.5rem; }
+  .stat-strip { margin: 0.35rem 0; padding: 0.25rem 0.4rem; }
+  .throws { margin-top: 0.3rem; padding-top: 0.45rem; }
+  .throw { min-height: 2.5rem; padding: 0.2rem; }
+
+  .player:not(.active) {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.55rem 0.9rem;
+  }
+
+  .player:not(.active) > :not(.player-head):not(.score-block) {
+    display: none;
+  }
+
+  .player:not(.active) .player-head {
+    flex: 1;
+    min-width: 0;
+    align-items: center;
+    margin: 0;
+  }
+
+  .player:not(.active) .player-id {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 0.6rem;
+  }
+
+  .player:not(.active) .player-name { font-size: 1.15rem; }
+  .player:not(.active) .badge.bot { display: none; }
+
+  .player:not(.active) .score-block { margin: 0; flex-shrink: 0; }
+  .player:not(.active) .score { font-size: 1.9rem; text-shadow: none; }
 }

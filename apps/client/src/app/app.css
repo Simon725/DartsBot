@@ -82,6 +82,15 @@
   animation: dot-pulse 2.4s ease-in-out infinite;
 }
 
+.brand-meta.offline {
+  color: var(--cream);
+}
+
+.brand-meta.offline .dot {
+  background: var(--match-red);
+  box-shadow: 0 0 8px var(--match-red);
+}
+
 @keyframes dot-pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }

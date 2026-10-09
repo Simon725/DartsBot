@@ -14,9 +14,9 @@
       <span class="brand-sub">Darts · LAN</span>
     </span>
   </a>
-  <div class="brand-meta">
+  <div class="brand-meta" [class.offline]="!connected()" role="status">
     <span class="dot"></span>
-    <span>private match</span>
+    <span>{{ connected() ? 'connected' : 'reconnecting…' }}</span>
   </div>
 </header>
 <router-outlet />
