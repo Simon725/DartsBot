@@ -11,10 +11,20 @@
         <h1 class="game-title">{{ title() }}</h1>
         <p class="game-sub">{{ subtitle() }}</p>
       </div>
-      <a routerLink="/" class="exit">
-        <span>End match</span>
-        <span class="exit-x" aria-hidden="true">×</span>
-      </a>
+      <button
+        type="button"
+        class="exit"
+        [attr.aria-haspopup]="isMatchActive() ? 'dialog' : null"
+        (click)="requestExit()"
+      >
+        @if (isMatchActive()) {
+          <span>End match</span>
+          <span class="exit-x" aria-hidden="true">×</span>
+        } @else {
+          <span>New game</span>
+          <span class="exit-x" aria-hidden="true">→</span>
+        }
+      </button>
     </header>
 
     <div class="board-layout">
@@ -25,7 +35,7 @@
         }
       </div>
 
-      <aside class="board-side">
+      <aside class="board-side" [class.is-finished]="winner()">
         @if (winner()) {
           <div class="winner-banner" role="status">
             <div class="winner-inner">
@@ -44,23 +54,38 @@
             </div>
           </div>
         } @else {
-          <div class="turn-indicator">
-            @if (currentPlayer()) {
-              <span class="turn-arrow">▸</span>
-              <span class="turn-text">
-                <strong>{{ currentPlayer()!.name }}</strong>
-                @if (currentPlayer()!.isBot) {
-                  <span class="bot-hint">throwing…</span>
-                } @else {
-                  <span class="turn-call">to throw</span>
-                }
-              </span>
-            }
+          <div class="turn-row">
+            <div class="turn-indicator">
+              @if (currentPlayer()) {
+                <span class="turn-arrow" aria-hidden="true">▸</span>
+                <span class="turn-text">
+                  <strong>{{ currentPlayer()!.name }}</strong>
+                  @if (currentPlayer()!.isBot) {
+                    <span class="bot-hint">throwing…</span>
+                  } @else {
+                    <span class="turn-call">to throw</span>
+                  }
+                </span>
+              }
+            </div>
+            <div class="turn-toast-region" aria-live="polite" aria-atomic="true">
+              @if (turnToast(); as turn) {
+                <span class="turn-toast" [class.is-bust]="turn.bust">
+                  @if (turn.bust) {
+                    {{ turn.playerName }} — <strong>BUST</strong>
+                  } @else {
+                    {{ turn.playerName }} scored <strong>{{ turn.scored }}</strong>
+                  }
+                </span>
+              }
+            </div>
           </div>
           <app-throw-input
             [disabled]="inputDisabled()"
             [turnTotalSupported]="turnTotalSupported()"
             [turnTotalDisabledReason]="turnTotalDisabledReason()"
+            [showTurnTotal]="turnTotalAvailableInMode()"
+            [relevantSegments]="relevantSegments()"
             [outMode]="outMode()"
             [remaining]="currentRemaining()"
             [attemptDartsLeft]="attemptDartsLeft()"
@@ -90,3 +115,62 @@
     </div>
   }
 </section>
+
+@if (legWon(); as leg) {
+  <div class="dialog-backdrop" (click)="nextLeg()">
+    <div
+      #legWonDialog
+      class="dialog leg-won"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="leg-won-title"
+      aria-describedby="leg-won-stats"
+      (click)="$event.stopPropagation()"
+      (keydown)="onLegWonKeydown($event)"
+    >
+      <span class="dialog-eyebrow">Leg won</span>
+      <h2 id="leg-won-title" class="dialog-title">
+        Leg {{ leg.legNumber }} to <span class="leg-won-name">{{ leg.winnerName }}</span>
+      </h2>
+      <dl id="leg-won-stats" class="leg-won-stats">
+        <div class="stat">
+          <dt>Darts</dt>
+          <dd>{{ leg.darts }}</dd>
+        </div>
+        <div class="stat">
+          <dt>Average</dt>
+          <dd>{{ legWonAverage() }}</dd>
+        </div>
+      </dl>
+      <div class="dialog-actions">
+        <button type="button" class="dialog-btn is-primary" (click)="nextLeg()">Next leg</button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (endMatchDialogOpen()) {
+  <div class="dialog-backdrop" (click)="cancelExit()">
+    <div
+      #endMatchDialog
+      class="dialog end-match"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="end-match-title"
+      aria-describedby="end-match-desc"
+      (click)="$event.stopPropagation()"
+      (keydown)="onEndMatchKeydown($event)"
+    >
+      <span class="dialog-eyebrow">Leaving the oche?</span>
+      <h2 id="end-match-title" class="dialog-title">End this match?</h2>
+      <p id="end-match-desc" class="dialog-text">
+        Keep it for later to resume from the home screen, or end it for good.
+      </p>
+      <div class="dialog-actions">
+        <button type="button" class="dialog-btn is-primary" (click)="keepForLater()">Keep for later</button>
+        <button type="button" class="dialog-btn is-danger" (click)="endMatch()">End match</button>
+        <button type="button" class="dialog-btn" (click)="cancelExit()">Cancel</button>
+      </div>
+    </div>
+  </div>
+}

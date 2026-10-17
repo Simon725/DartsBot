@@ -101,8 +101,9 @@
                   type="checkbox"
                   [ngModel]="player.isBot"
                   (ngModelChange)="updatePlayerIsBot(playerIndex, $event)"
+                  [attr.aria-label]="'Player ' + (playerIndex + 1) + ' is a bot'"
                 />
-                <span>BOT</span>
+                <span aria-hidden="true">BOT</span>
               </label>
             }
             @if (players().length > 1) {
@@ -126,40 +127,44 @@
                     [class.active]="player.botPreset === preset"
                     (click)="setPlayerPreset(playerIndex, preset)"
                   >
-                    {{ preset }}
+                    {{ presetLabels[preset] }}
                   </button>
                 }
               </div>
 
               <div class="bot-sliders">
-                <label class="slider-field">
+                <div class="slider-field">
                   <span class="slider-head">
-                    <span class="slider-label">3-dart avg</span>
-                    <span class="slider-value">{{ player.botConfig.targetAverage }}</span>
+                    <label class="slider-label" [for]="'bot-avg-' + player.uid">3-dart avg</label>
+                    <span class="slider-value" aria-hidden="true">{{ player.botConfig.targetAverage }}</span>
                   </span>
                   <input
                     type="range"
+                    [id]="'bot-avg-' + player.uid"
                     [min]="BOT_LIMITS.averageMin"
                     [max]="BOT_LIMITS.averageMax"
                     step="1"
+                    [attr.aria-valuetext]="player.botConfig.targetAverage + ' average'"
                     [ngModel]="player.botConfig.targetAverage"
                     (ngModelChange)="setPlayerAvg(playerIndex, $event)"
                   />
-                </label>
-                <label class="slider-field">
+                </div>
+                <div class="slider-field">
                   <span class="slider-head">
-                    <span class="slider-label">Checkout %</span>
-                    <span class="slider-value">{{ player.botConfig.checkoutPercent }}</span>
+                    <label class="slider-label" [for]="'bot-checkout-' + player.uid">Checkout %</label>
+                    <span class="slider-value" aria-hidden="true">{{ player.botConfig.checkoutPercent }}</span>
                   </span>
                   <input
                     type="range"
+                    [id]="'bot-checkout-' + player.uid"
                     [min]="BOT_LIMITS.checkoutMin"
                     [max]="BOT_LIMITS.checkoutMax"
                     step="1"
+                    [attr.aria-valuetext]="player.botConfig.checkoutPercent + ' percent'"
                     [ngModel]="player.botConfig.checkoutPercent"
                     (ngModelChange)="setPlayerCheckout(playerIndex, $event)"
                   />
-                </label>
+                </div>
               </div>
             </div>
           }

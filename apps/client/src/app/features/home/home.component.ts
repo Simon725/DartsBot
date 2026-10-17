@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { GAME_CATALOG } from '../../core/game-catalog';
+import { GAME_CATALOG, findGame } from '../../core/game-catalog';
+import { readSavedGameSummary } from '../../core/game-state.service';
 import { SpotlightDirective } from '../../shared/spotlight.directive';
 
 const BOARD_ORDER = [20, 1, 18, 4, 13, 6, 10, 15, 2, 17, 3, 19, 7, 16, 8, 11, 14, 9, 12, 5];
@@ -8,6 +9,12 @@ const BOARD_ORDER = [20, 1, 18, 4, 13, 6, 10, 15, 2, 17, 3, 19, 7, 16, 8, 11, 14
 interface BoardSegment {
   number: number;
   path: string;
+}
+
+interface ResumableMatch {
+  id: string;
+  title: string;
+  players: string;
 }
 
 interface CricketTarget {
@@ -34,6 +41,16 @@ function segmentPath(index: number): string {
   ].join(' ');
 }
 
+function readResumableMatch(): ResumableMatch | null {
+  const saved = readSavedGameSummary();
+  if (!saved) return null;
+  return {
+    id: saved.id,
+    title: findGame(saved.mode)?.title ?? saved.mode,
+    players: saved.playerNames.join(' vs '),
+  };
+}
+
 @Component({
   selector: 'app-home',
   imports: [RouterLink, SpotlightDirective],
@@ -42,6 +59,7 @@ function segmentPath(index: number): string {
 })
 export class HomeComponent {
   readonly games = GAME_CATALOG;
+  readonly resumableMatch = readResumableMatch();
 
   readonly x01Leg = [
     { remaining: 501, thrown: '' },

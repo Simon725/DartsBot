@@ -4,6 +4,21 @@
     <p class="hero-sub">Six games, no accounts. Pick one to set it up.</p>
   </header>
 
+  @if (resumableMatch; as match) {
+    <a class="resume" appSpotlight [routerLink]="['/game', match.id]">
+      <span class="resume-pulse" aria-hidden="true"></span>
+      <span class="resume-text">
+        <span class="resume-label">Resume · {{ match.title }}</span>
+        <span class="resume-players">{{ match.players }}</span>
+      </span>
+      <span class="resume-go" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="18" height="18">
+          <path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </span>
+    </a>
+  }
+
   <nav class="bento" aria-label="Games">
     @for (game of games; track game.mode; let index = $index) {
       <a

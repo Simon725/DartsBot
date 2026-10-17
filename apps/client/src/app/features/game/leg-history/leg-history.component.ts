@@ -23,6 +23,8 @@ export class LegHistoryComponent {
 
   readonly players = computed<Player[]>(() => this.state().players);
 
+  readonly isFinished = computed(() => this.state().status === 'finished');
+
   readonly rows = computed<LegRow[]>(() => {
     const state = this.state();
     if (state.modeState.mode !== 'x01') return [];

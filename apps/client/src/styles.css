@@ -22,7 +22,7 @@
   --match-red-glow: rgba(210, 32, 45, 0.45);
   --ink: #f7f1de;
   --ink-mute: #b8a995;
-  --ink-faint: #7a6d5e;
+  --ink-faint: #968776;
 
   /* Type */
   --font-display: 'Bebas Neue', 'Arial Narrow', sans-serif;
@@ -225,5 +225,6 @@ input, select {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

@@ -1,8 +1,10 @@
 import {
   Component,
+  DestroyRef,
   ElementRef,
   computed,
   effect,
+  inject,
   input,
   output,
   signal,
@@ -33,6 +35,8 @@ interface ThrowSubmit {
 export type ThrowInputEvent = ThrowSubmit | TurnTotalSubmit;
 
 const STORAGE_KEY = 'oche:input-mode';
+const DIGIT_COMMIT_DELAY_MS = 600;
+const MULTIPLIER_KEYS: Readonly<Record<string, 1 | 2 | 3>> = { s: 1, d: 2, t: 3 };
 
 @Component({
   selector: 'app-throw-input',
@@ -40,6 +44,7 @@ const STORAGE_KEY = 'oche:input-mode';
   imports: [FormsModule, SpotlightDirective],
   templateUrl: './throw-input.component.html',
   styleUrl: './throw-input.component.css',
+  host: { '(document:keydown)': 'onDocumentKeydown($event)' },
 })
 export class ThrowInputComponent {
   readonly disabled = input(false);
@@ -53,6 +58,8 @@ export class ThrowInputComponent {
   readonly remaining = input<number | null>(null);
   /** Darts left in the current 121 attempt; null outside the 121 drill. */
   readonly attemptDartsLeft = input<number | null>(null);
+  readonly relevantSegments = input<readonly number[] | null>(null);
+  readonly showTurnTotal = input(true);
 
   readonly throwSubmitted = output<Throw>();
   readonly turnSubmitted = output<{ total: number; checkoutDarts?: 1 | 2 | 3 }>();
@@ -77,6 +84,9 @@ export class ThrowInputComponent {
   ];
 
   readonly selectedMultiplier = signal<1 | 2 | 3>(1);
+  readonly pendingDigits = signal('');
+  private pendingDigitsTimer: ReturnType<typeof setTimeout> | null = null;
+  private wasDisabled = false;
   readonly bullScore = computed(() => (this.selectedMultiplier() === 1 ? 25 : 50));
 
   // Total mode state.
@@ -152,17 +162,26 @@ export class ThrowInputComponent {
   );
 
   readonly modeTabs = computed(() => {
+    const padTabs = [
+      { key: 'numeric' as const, label: 'Numeric', enabled: true, hint: '20→1 + bull' },
+      { key: 'board' as const, label: 'Board', enabled: true, hint: 'Board order' },
+    ];
+    if (!this.showTurnTotal()) return padTabs;
     const total = this.turnTotalSupported();
     return [
-      { key: 'board' as const, label: 'Board', enabled: true, hint: 'Dartboard layout' },
-      { key: 'numeric' as const, label: 'Numeric', enabled: true, hint: '20→1 + bull' },
+      ...padTabs,
       {
         key: 'total' as const,
         label: 'Total',
         enabled: total,
-        hint: total ? 'One number per turn' : this.turnTotalDisabledReason(),
+        hint: total ? 'Per turn' : this.turnTotalDisabledReason(),
       },
     ];
+  });
+
+  private readonly relevantSegmentSet = computed(() => {
+    const segments = this.relevantSegments();
+    return segments === null ? null : new Set(segments);
   });
 
   readonly activeTabIndex = computed(() =>
@@ -172,7 +191,7 @@ export class ThrowInputComponent {
   constructor() {
     effect(() => {
       // If turn-total becomes unsupported and we're on it, fall back to numeric.
-      if (!this.turnTotalSupported() && this.inputMode() === 'total') {
+      if (!this.isTurnTotalAllowed() && this.inputMode() === 'total') {
         this.inputMode.set('numeric');
       }
     });
@@ -213,6 +232,135 @@ export class ThrowInputComponent {
         this.checkoutPromptOpen.set(false);
       }
     });
+    effect(() => {
+      const disabled = this.disabled();
+      if (this.wasDisabled && !disabled) this.resetTotal();
+      if (disabled) this.clearPendingDigits();
+      this.wasDisabled = disabled;
+    });
+    inject(DestroyRef).onDestroy(() => this.clearPendingDigitsTimer());
+  }
+
+  isSegmentDimmed(segment: number): boolean {
+    const relevant = this.relevantSegmentSet();
+    return relevant !== null && !relevant.has(segment);
+  }
+
+  isSegmentHighlighted(segment: number): boolean {
+    return this.relevantSegmentSet()?.has(segment) ?? false;
+  }
+
+  onDocumentKeydown(event: KeyboardEvent): void {
+    if (!this.shouldHandleShortcut(event)) return;
+    const key = event.key.toLowerCase();
+    const handled =
+      this.handleMultiplierKey(key) || this.handleDigitKey(key) || this.handleCommandKey(key);
+    if (handled) event.preventDefault();
+  }
+
+  private isTurnTotalAllowed(): boolean {
+    return this.showTurnTotal() && this.turnTotalSupported();
+  }
+
+  private shouldHandleShortcut(event: KeyboardEvent): boolean {
+    if (this.disabled() || this.inputMode() === 'total') return false;
+    if (event.ctrlKey || event.metaKey || event.altKey || event.repeat) return false;
+    return !this.isTypingTarget(event.target);
+  }
+
+  private isTypingTarget(target: EventTarget | null): boolean {
+    if (!(target instanceof HTMLElement)) return false;
+    if (target.isContentEditable) return true;
+    return ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName);
+  }
+
+  private handleMultiplierKey(key: string): boolean {
+    const multiplier = MULTIPLIER_KEYS[key];
+    if (!multiplier) return false;
+    this.selectMultiplier(multiplier);
+    return true;
+  }
+
+  private handleCommandKey(key: string): boolean {
+    switch (key) {
+      case 'b':
+        this.clearPendingDigits();
+        this.submitSegment(25);
+        return true;
+      case 'm':
+        this.clearPendingDigits();
+        this.submitMiss();
+        return true;
+      case 'enter':
+        if (!this.pendingDigits()) return false;
+        this.commitPendingDigits();
+        return true;
+      case 'escape':
+        if (!this.pendingDigits()) return false;
+        this.clearPendingDigits();
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  private handleDigitKey(key: string): boolean {
+    if (!/^[0-9]$/.test(key)) return false;
+    const pending = this.pendingDigits();
+    if (pending) {
+      this.completePendingDigits(pending, key);
+    } else {
+      this.startPendingDigits(key);
+    }
+    return true;
+  }
+
+  private startPendingDigits(digit: string): void {
+    if (digit === '0') {
+      this.submitMiss();
+      return;
+    }
+    if (digit !== '1' && digit !== '2') {
+      this.submitSegment(Number(digit));
+      return;
+    }
+    this.pendingDigits.set(digit);
+    this.clearPendingDigitsTimer();
+    this.pendingDigitsTimer = setTimeout(() => this.commitPendingDigits(), DIGIT_COMMIT_DELAY_MS);
+  }
+
+  private completePendingDigits(pending: string, digit: string): void {
+    const combined = Number(pending + digit);
+    if (combined <= 20 || combined === 25) {
+      this.clearPendingDigits();
+      this.submitSegment(combined);
+      return;
+    }
+    this.commitPendingDigits();
+    this.startPendingDigits(digit);
+  }
+
+  private commitPendingDigits(): void {
+    const pending = this.pendingDigits();
+    this.clearPendingDigits();
+    if (pending) this.submitSegment(Number(pending));
+  }
+
+  private clearPendingDigits(): void {
+    this.clearPendingDigitsTimer();
+    this.pendingDigits.set('');
+  }
+
+  private clearPendingDigitsTimer(): void {
+    if (this.pendingDigitsTimer === null) return;
+    clearTimeout(this.pendingDigitsTimer);
+    this.pendingDigitsTimer = null;
+  }
+
+  private resetTotal(): void {
+    this.totalScore.set(null);
+    const totalInput = this.totalInputEl()?.nativeElement;
+    if (totalInput) totalInput.value = '';
   }
 
   /**
@@ -243,11 +391,12 @@ export class ThrowInputComponent {
     } catch {
       /* ignore */
     }
-    return 'board';
+    return 'numeric';
   }
 
   setInputMode(mode: ThrowInputMode): void {
-    if (mode === 'total' && !this.turnTotalSupported()) return;
+    if (mode === 'total' && !this.isTurnTotalAllowed()) return;
+    this.clearPendingDigits();
     this.inputMode.set(mode);
     // Persist only user-initiated choices — the automatic fallback (Total
     // becoming unsupported) must not overwrite the stored preference.
@@ -295,7 +444,7 @@ export class ThrowInputComponent {
       return;
     }
     this.turnSubmitted.emit({ total: this.totalScore()! });
-    this.totalScore.set(null);
+    this.resetTotal();
   }
 
   confirmCheckout(darts: 1 | 2 | 3): void {
@@ -307,7 +456,7 @@ export class ThrowInputComponent {
     if (!this.checkoutPromptOpen() || snapshot === null || !snapshot.options.includes(darts)) return;
     this.closeCheckoutDialog();
     this.turnSubmitted.emit({ total: snapshot.total, checkoutDarts: darts });
-    this.totalScore.set(null);
+    this.resetTotal();
     this.checkoutSnapshot.set(null);
     this.checkoutPromptOpen.set(false);
   }

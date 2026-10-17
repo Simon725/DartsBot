@@ -112,7 +112,7 @@
 }
 
 .mode-tab:disabled {
-  opacity: 0.35;
+  opacity: 0.55;
   cursor: not-allowed;
 }
 
@@ -127,15 +127,14 @@
 }
 
 .mode-tab .tab-hint {
-  font-size: 0.56rem;
-  color: var(--ink-faint);
-  letter-spacing: 0.14em;
+  font-size: 0.6875rem;
+  color: var(--ink-mute);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  margin-top: 0.05rem;
+  margin-top: 0.1rem;
   max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  text-align: center;
+  overflow-wrap: anywhere;
 }
 
 .mode-tab.active .tab-hint {
@@ -216,7 +215,7 @@
 
 .submit-total:disabled {
   background: var(--bg-elev);
-  color: var(--ink-faint);
+  color: color-mix(in srgb, var(--ink-mute) 80%, var(--bg-elev));
   box-shadow: none;
   cursor: not-allowed;
 }
@@ -436,10 +435,10 @@
 }
 
 .mult-name {
-  font-size: 0.58rem;
-  letter-spacing: 0.2em;
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--ink-faint);
+  color: var(--ink-mute);
   margin-top: 0.1rem;
 }
 
@@ -487,6 +486,7 @@
     border-color 0.2s var(--ease-out),
     color 0.2s var(--ease-out),
     box-shadow 0.2s var(--ease-out),
+    opacity 0.2s var(--ease-out),
     transform 0.15s var(--ease-out);
 }
 
@@ -608,14 +608,120 @@
   color: var(--cream);
 }
 
-@media (max-width: 640px) {
-  .throw-input { padding: 0.7rem; }
-  .segments { grid-template-columns: repeat(4, 1fr); }
-  .seg,
-  .mult { min-height: 44px; }
-  .seg-num { font-size: 1.3rem; }
+/* ── Relevant segments ────────────────────── */
+
+.seg.relevant {
+  border-color: var(--brass);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brass) 45%, transparent), 0 0 14px -6px rgba(200, 165, 87, 0.6);
+}
+
+.seg.relevant .seg-num {
+  font-weight: 700;
+}
+
+.seg.bull.relevant {
+  border-color: var(--sage-bright);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sage-bright) 45%, transparent), 0 0 16px -6px var(--sage-bright);
+}
+
+.seg.dimmed {
+  opacity: 0.4;
+  filter: saturate(0.5);
+}
+
+.seg.dimmed:hover:not(:disabled),
+.seg.dimmed:focus-visible {
+  opacity: 0.85;
+}
+
+.seg.pending {
+  border-color: var(--armed);
+  box-shadow: 0 0 0 1px var(--armed), 0 0 16px -4px var(--armed-glow);
+}
+
+/* ── Keyboard shortcut hint ───────────────── */
+
+.shortcut-hint {
+  display: none;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.35rem 0.9rem;
+  margin: 0.6rem 0 0;
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  color: var(--ink-mute);
+}
+
+.shortcut-hint kbd {
+  display: inline-block;
+  min-width: 1.35em;
+  margin-right: 0.2em;
+  padding: 0.05em 0.35em;
+  font-family: var(--font-numeric);
+  font-size: 0.95em;
+  text-align: center;
+  color: var(--cream);
+  background: rgba(14, 10, 10, 0.6);
+  border: 1px solid var(--bg-line);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+}
+
+.shortcut-pending {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--armed);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .shortcut-hint { display: flex; }
 }
 
 @media (max-width: 640px) {
-  .mode-tab .tab-hint { display: none; }
+  .throw-input { padding: 0.5rem; }
+  .mode-tabs,
+  .multipliers { margin-bottom: 0.35rem; }
+  .segments { grid-template-columns: repeat(5, 1fr); gap: 0.3rem; }
+  .specials { gap: 0.3rem; margin-top: 0.3rem; }
+  .seg,
+  .mult { min-height: 44px; }
+  .mode-tab { min-height: 40px; }
+  .seg-num { font-size: 1.2rem; }
+  .mode-tab .tab-hint,
+  .mult-name { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .throw-input,
+  .checkout-card {
+    animation: none;
+  }
+
+  .slide-pill,
+  .mode-tab,
+  .mult,
+  .mult-letter,
+  .seg,
+  .seg::before,
+  .seg-num,
+  .submit-total,
+  .checkout-option,
+  .checkout-cancel {
+    transition: none;
+  }
+
+  .mult:active:not(:disabled),
+  .seg:active:not(:disabled),
+  .checkout-option:active {
+    animation: none;
+  }
+
+  .mode-tab:active:not(:disabled),
+  .seg:hover:not(:disabled),
+  .submit-total:hover:not(:disabled),
+  .checkout-option:hover,
+  .checkout-option:focus-visible {
+    transform: none;
+  }
 }

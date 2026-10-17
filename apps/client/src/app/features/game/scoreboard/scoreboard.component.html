@@ -24,6 +24,15 @@
           <span class="player-name">{{ player.name }}</span>
         </div>
         <div class="player-badges">
+          @if (lastTurnFor(player.id); as turn) {
+            <span class="badge last-turn" [class.bust]="turn.bust" [attr.aria-label]="turn.bust ? 'Last turn: bust' : 'Last turn: ' + turn.scored">
+              @if (turn.bust) {
+                Bust
+              } @else {
+                Last <strong>{{ turn.scored }}</strong>
+              }
+            </span>
+          }
           @if (player.isBot) {
             <span class="badge bot">
               BOT
@@ -96,17 +105,21 @@
         </div>
       }
 
-      @if (i === state().currentPlayerIndex && checkoutFor(state(), player.id); as co) {
-        <div class="checkout" [class.bogey]="co.isBogey">
-          <span class="checkout-label">Checkout</span>
-          @if (co.isBogey) {
-            <span class="checkout-bogey">Bogey. No 3-dart finish.</span>
-          } @else if (co.route) {
-            <ol class="checkout-route">
-              @for (step of co.route; track $index) {
-                <li class="checkout-step">{{ step }}</li>
+      @if (i === state().currentPlayerIndex && checkoutSlotVisible(state(), player.id)) {
+        <div class="checkout-slot">
+          @if (checkoutFor(state(), player.id); as co) {
+            <div class="checkout" [class.bogey]="co.isBogey">
+              <span class="checkout-label">Checkout</span>
+              @if (co.isBogey) {
+                <span class="checkout-bogey">Bogey. No 3-dart finish.</span>
+              } @else if (co.route) {
+                <ol class="checkout-route">
+                  @for (step of co.route; track $index) {
+                    <li class="checkout-step">{{ step }}</li>
+                  }
+                </ol>
               }
-            </ol>
+            </div>
           }
         </div>
       }
@@ -190,3 +203,33 @@
     </article>
   }
 </div>
+
+@if (state().modeState.mode === 'cricket') {
+  <table class="cricket-grid" aria-label="Cricket marks by player">
+    <thead>
+      <tr>
+        <th scope="col"><span class="visually-hidden">Number</span></th>
+        @for (player of state().players; track player.id; let i = $index) {
+          <th scope="col" [class.active]="i === state().currentPlayerIndex">{{ player.name }}</th>
+        }
+      </tr>
+    </thead>
+    <tbody>
+      @for (n of cricketNumbers; track n) {
+        <tr [class.dead]="isCricketClosedByAll(state(), n)">
+          <th scope="row">{{ n === 25 ? 'B' : n }}</th>
+          @for (player of state().players; track player.id; let i = $index) {
+            @let count = cricketMarkCount(state(), player.id, n);
+            <td [class.active]="i === state().currentPlayerIndex" [class.closed]="count >= 3" [attr.aria-label]="player.name + ': ' + count + ' of 3'">
+              <span class="cricket-pips" aria-hidden="true">
+                <span class="pip" [class.lit]="count >= 1"></span>
+                <span class="pip" [class.lit]="count >= 2"></span>
+                <span class="pip" [class.lit]="count >= 3"></span>
+              </span>
+            </td>
+          }
+        </tr>
+      }
+    </tbody>
+  </table>
+}

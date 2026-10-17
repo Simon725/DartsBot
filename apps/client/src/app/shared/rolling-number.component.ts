@@ -42,6 +42,8 @@ const DIGITS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
       display: inline-block;
       height: 1em;
       line-height: 1;
+      overflow: hidden;
+      overflow: visible clip;
       clip-path: inset(0 -1em);
     }
 
@@ -56,6 +58,12 @@ const DIGITS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
       display: block;
       height: 1em;
       line-height: 1;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .reel {
+        transition: none;
+      }
     }
 
     .visually-hidden {

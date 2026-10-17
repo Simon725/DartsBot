@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { Component, effect, inject, input, signal, untracked } from '@angular/core';
 import {
   getCheckout,
   threeDartAverage,
@@ -7,8 +7,16 @@ import {
   type CricketNumber,
   type GameState,
 } from '@darts/shared';
+import { GameStateService, type TurnSummary } from '../../../core/game-state.service';
 import { RollingNumberComponent } from '../../../shared/rolling-number.component';
 import { SpotlightDirective } from '../../../shared/spotlight.directive';
+
+const MAX_CHECKOUT = 170;
+
+interface LastTurnsByGame {
+  gameId: string | null;
+  turns: Record<string, TurnSummary>;
+}
 
 @Component({
   selector: 'app-scoreboard',
@@ -21,6 +29,52 @@ export class ScoreboardComponent {
   readonly state = input.required<GameState>();
 
   readonly cricketNumbers: CricketNumber[] = [20, 19, 18, 17, 16, 15, 25];
+
+  private readonly gameState = inject(GameStateService);
+  private readonly lastTurns = signal<LastTurnsByGame>({ gameId: null, turns: {} });
+
+  constructor() {
+    effect(() => {
+      const gameId = this.state().id;
+      const turn = this.gameState.lastTurn();
+      untracked(() => this.recordLastTurn(gameId, turn));
+    });
+  }
+
+  private recordLastTurn(gameId: string, turn: TurnSummary | null): void {
+    const current = this.lastTurns();
+    const turns = current.gameId === gameId ? current.turns : {};
+    if (!turn) {
+      if (current.gameId !== gameId) this.lastTurns.set({ gameId, turns });
+      return;
+    }
+    if (turns[turn.playerId] === turn) return;
+    this.lastTurns.set({ gameId, turns: { ...turns, [turn.playerId]: turn } });
+  }
+
+  lastTurnFor(playerId: string): TurnSummary | null {
+    return this.lastTurns().turns[playerId] ?? null;
+  }
+
+  isCricketClosedByAll(state: GameState, n: CricketNumber): boolean {
+    if (state.modeState.mode !== 'cricket') return false;
+    const marks = state.modeState.marks;
+    return state.players.every((player) => (marks[player.id]?.[n] ?? 0) >= 3);
+  }
+
+  cricketMarkCount(state: GameState, playerId: string, n: CricketNumber): number {
+    return this.cricketMarks(state, playerId)?.[n] ?? 0;
+  }
+
+  checkoutSlotVisible(state: GameState, playerId: string): boolean {
+    const ms = state.modeState;
+    if (ms.mode === 'x01') {
+      const inFinishRange = (ms.scores[playerId] ?? Infinity) <= MAX_CHECKOUT;
+      return state.config.mode === 'x01' && state.config.outMode !== 'straight' && inFinishRange;
+    }
+    if (ms.mode === '121') return playerId === ms.playerId;
+    return false;
+  }
 
   // Helpers — narrow modeState by accepting the state as parameter to satisfy template strictness.
   scoreFor(state: GameState, playerId: string): string {

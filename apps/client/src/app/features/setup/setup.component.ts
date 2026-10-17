@@ -33,6 +33,13 @@ interface PlayerDraft {
 const MAX_PLAYERS = 8;
 const MAX_BOT_DELAY_SECONDS = 10;
 const DIFFICULTIES: BotDifficulty[] = ['beginner', 'casual', 'club', 'pro'];
+const PRESET_LABELS: Record<BotPresetChoice, string> = {
+  beginner: 'Beginner',
+  casual: 'Casual',
+  club: 'Club',
+  pro: 'Pro',
+  custom: 'Custom',
+};
 
 let nextDraftUid = 1;
 
@@ -130,6 +137,7 @@ export class SetupComponent {
     { value: 'stay', label: 'Stay' },
   ];
   readonly presetChoices: BotPresetChoice[] = [...DIFFICULTIES, 'custom'];
+  readonly presetLabels = PRESET_LABELS;
   readonly BOT_LIMITS = BOT_LIMITS;
 
   addPlayer(): void {

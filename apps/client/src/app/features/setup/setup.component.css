@@ -9,6 +9,10 @@
   display: none;
 }
 
+:host(.bull-off-open) .setup {
+  max-width: 1040px;
+}
+
 .setup {
   max-width: 640px;
   margin: 0 auto;
@@ -137,7 +141,7 @@
 .help {
   margin: 0;
   font-size: 0.85rem;
-  color: var(--ink-faint);
+  color: var(--ink-mute);
 }
 
 input[type='text'] {
@@ -164,7 +168,7 @@ input[type='text'] {
   grid-template-columns: auto 1fr auto auto auto;
   align-items: center;
   gap: 0.6rem;
-  padding: 0.55rem 0.75rem 0.55rem 0.55rem;
+  padding: 0.3rem 0.75rem 0.3rem 0.55rem;
   background: rgba(14, 10, 10, 0.45);
   border: 1px solid var(--bg-line);
   border-radius: 10px;
@@ -183,11 +187,13 @@ input[type='text'] {
 }
 
 .player-name {
+  min-width: 0;
+  height: 44px;
   background: transparent;
   border: 0;
   font-size: 1.05rem;
   color: var(--cream);
-  padding: 0.3rem 0;
+  padding: 0;
 }
 
 .player-name:focus {
@@ -199,13 +205,14 @@ input[type='text'] {
 }
 
 .bot-toggle {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.2em;
-  color: var(--ink-faint);
+  color: var(--ink-mute);
   padding: 0.35rem 0.7rem;
   background: rgba(14, 10, 10, 0.5);
   border: 1px solid var(--bg-line);
@@ -214,14 +221,32 @@ input[type='text'] {
   transition: all 0.2s var(--ease-out);
 }
 
+.bot-toggle::after {
+  content: '';
+  position: absolute;
+  inset: -8px -4px;
+}
+
+.bot-toggle:hover {
+  color: var(--cream);
+  border-color: var(--brass-deep);
+}
+
+.bot-toggle:has(input:focus-visible) {
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
+}
+
 .bot-toggle input {
   appearance: none;
   -webkit-appearance: none;
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--bg-line);
+  background: var(--ink-faint);
   margin: 0;
+  outline: none;
+  cursor: pointer;
   transition: background 0.2s var(--ease-out);
 }
 
@@ -285,7 +310,8 @@ input[type='text'] {
 }
 
 .preset-chip {
-  font-size: 0.65rem;
+  position: relative;
+  font-size: 0.72rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   font-weight: 700;
@@ -296,6 +322,12 @@ input[type='text'] {
   color: var(--ink-mute);
   cursor: pointer;
   transition: all 0.2s var(--ease-out);
+}
+
+.preset-chip::after {
+  content: '';
+  position: absolute;
+  inset: -4px -2px;
 }
 
 .preset-chip:hover {
@@ -334,11 +366,12 @@ input[type='text'] {
 }
 
 .slider-label {
-  font-size: 0.65rem;
+  font-size: 0.72rem;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--ink-faint);
+  color: var(--ink-mute);
   font-weight: 600;
+  cursor: pointer;
 }
 
 .slider-value {
@@ -354,17 +387,40 @@ input[type='text'] {
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
-  height: 4px;
-  background: var(--bg-line);
-  border-radius: 999px;
+  height: 24px;
+  margin: 0;
+  background: transparent;
   cursor: pointer;
   padding: 0;
   outline: none;
 }
 
+.slider-field input[type='range']::-webkit-slider-runnable-track {
+  height: 4px;
+  background: var(--bg-line);
+  border-radius: 999px;
+}
+
+.slider-field input[type='range']::-moz-range-track {
+  height: 4px;
+  background: var(--bg-line);
+  border-radius: 999px;
+}
+
+.slider-field input[type='range']:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
+}
+
+.slider-field input[type='range']:focus-visible::-moz-range-thumb {
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
+}
+
 .slider-field input[type='range']::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
+  margin-top: -7px;
   width: 18px;
   height: 18px;
   border-radius: 50%;
@@ -525,15 +581,62 @@ input[type='text'] {
     padding-block: 2rem 1rem;
   }
   .start { justify-content: center; }
+}
+
+@media (max-width: 480px) {
   .player-row {
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: auto 1fr auto auto;
     grid-template-areas:
-      "idx name remove"
-      "bot bot bot";
-    row-gap: 0.4rem;
+      "idx name name name"
+      ". . bot remove";
+    row-gap: 0.25rem;
+    padding-bottom: 0.5rem;
+  }
+  .player-row:not(:has(.bot-toggle, .remove)) {
+    grid-template-areas: "idx name name name";
+    padding-bottom: 0.3rem;
   }
   .player-index { grid-area: idx; }
   .player-name { grid-area: name; }
-  .bot-toggle { grid-area: bot; justify-self: start; }
+  .bot-toggle { grid-area: bot; }
   .remove { grid-area: remove; }
+}
+
+@media (pointer: coarse) {
+  .bot-toggle,
+  .preset-chip {
+    min-height: 44px;
+  }
+  .bot-toggle {
+    padding-inline: 0.9rem;
+  }
+  .bot-toggle::after,
+  .preset-chip::after {
+    display: none;
+  }
+  .bot-presets {
+    gap: 0.4rem;
+  }
+  .remove {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .player-row,
+  .player-block,
+  .bot-panel {
+    animation: none;
+  }
+  .start:hover:not(:disabled)::before {
+    animation: none;
+  }
+  .start:hover:not(:disabled),
+  .start:hover:not(:disabled) .start-arrow,
+  .back:hover svg,
+  .slider-field input[type='range']::-webkit-slider-thumb:hover {
+    transform: none;
+  }
 }

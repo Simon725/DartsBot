@@ -4,6 +4,7 @@
 }
 
 .bull-off {
+  --board-size: min(100%, 520px, max(300px, calc(100dvh - 470px)));
   padding-bottom: 2rem;
   display: flex;
   flex-direction: column;
@@ -31,7 +32,8 @@
 }
 
 .board-wrap {
-  width: min(100%, 520px);
+  grid-area: board;
+  width: var(--board-size);
   margin: 0 auto;
   border-radius: 50%;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 0 1px var(--bg-line);
@@ -191,6 +193,15 @@
   white-space: nowrap;
 }
 
+.starter {
+  margin: 0;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  letter-spacing: 0.06em;
+  color: var(--cream);
+}
+
 .actions {
   display: flex;
   flex-direction: column;
@@ -245,10 +256,39 @@
   50% { transform: scale(1.5); }
 }
 
+@media (min-width: 900px) {
+  .bull-off {
+    --board-size: min(520px, 90vw, max(320px, calc(100dvh - 150px)));
+    display: grid;
+    grid-template-columns: var(--board-size) minmax(260px, 1fr);
+    grid-template-rows: 1fr auto auto auto 1fr;
+    grid-template-areas:
+      "board ."
+      "board head"
+      "board standings"
+      "board actions"
+      "board .";
+    column-gap: 2.5rem;
+    row-gap: 1.1rem;
+  }
+  .head { grid-area: head; text-align: left; }
+  .standings { grid-area: standings; }
+  .actions { grid-area: actions; }
+  .starter { text-align: left; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   :host,
   .dart-tip,
   .dart-halo {
     animation: none !important;
+  }
+  .primary,
+  .board-wrap,
+  .standing {
+    transition: none;
+  }
+  .primary:hover:not(:disabled) {
+    transform: none;
   }
 }

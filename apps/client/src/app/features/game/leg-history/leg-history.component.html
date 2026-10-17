@@ -1,6 +1,6 @@
 <section class="leg-history" aria-labelledby="leg-history-title">
   <header class="head">
-    <span class="eyebrow">Match report</span>
+    <span class="eyebrow">{{ isFinished() ? 'Match report' : 'Legs so far' }}</span>
     <h2 id="leg-history-title" class="title">Average per leg</h2>
   </header>
 
@@ -34,7 +34,7 @@
       </tbody>
       <tfoot>
         <tr>
-          <th scope="row" class="leg-col">Match</th>
+          <th scope="row" class="leg-col">{{ isFinished() ? 'Match' : 'Total' }}</th>
           @for (average of matchAverages(); track $index) {
             <td><span class="avg">{{ average }}</span></td>
           }

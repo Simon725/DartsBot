@@ -42,6 +42,83 @@
   max-width: 48ch;
 }
 
+/* ── Resume ───────────────────────────────── */
+
+.resume {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  padding: 1rem 1.25rem;
+  border-radius: 18px;
+  border: 1px solid var(--match-red);
+  background:
+    radial-gradient(80% 140% at 0% 50%, rgba(210, 32, 45, 0.22), transparent 60%),
+    linear-gradient(180deg, rgba(42, 26, 24, 0.95), rgba(20, 14, 13, 0.95));
+  color: var(--ink);
+  text-decoration: none;
+  box-shadow: 0 14px 34px -24px var(--match-red-glow);
+  transition: transform 0.3s var(--ease-thud), box-shadow 0.3s var(--ease-out);
+  animation: fade-up 0.6s var(--ease-out) 0.1s backwards;
+}
+
+.resume:is(:hover, :focus-visible) {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 40px -20px var(--match-red-glow);
+}
+
+.resume:focus-visible {
+  outline-offset: 3px;
+}
+
+.resume-pulse {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--match-red);
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.resume-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.resume-label {
+  font-family: var(--font-display);
+  font-size: 1.7rem;
+  line-height: 1.05;
+  letter-spacing: 0.04em;
+  color: var(--cream);
+}
+
+.resume-players {
+  font-size: 0.95rem;
+  color: var(--ink-mute);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.resume-go {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  color: var(--cream);
+  background: var(--match-red);
+  transition: transform 0.35s var(--ease-thud);
+}
+
+.resume:is(:hover, :focus-visible) .resume-go {
+  transform: translateX(3px);
+}
+
 /* ── Bento grid ───────────────────────────── */
 
 .bento {
@@ -145,6 +222,10 @@
   padding-top: 2.25rem;
 }
 
+.tile[data-game='x01'] .visual {
+  padding-top: 1rem;
+}
+
 .tile-text {
   display: flex;
   flex-direction: column;
@@ -200,14 +281,14 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
+  gap: 1.25rem;
 }
 
 .x01-window {
   height: 1em;
   overflow: hidden;
   font-family: var(--font-display);
-  font-size: clamp(5rem, 11vw, 8.5rem);
+  font-size: clamp(5rem, 14vw, 10.5rem);
   line-height: 1;
   color: var(--cream);
   font-variant-numeric: tabular-nums;
@@ -233,11 +314,11 @@
 }
 
 .x01-throw {
-  padding: 0.3rem 0.7rem;
+  padding: 0.35rem 0.85rem;
   border-radius: 999px;
   border: 1px solid var(--bg-line);
   font-family: var(--font-numeric);
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   color: var(--ink-faint);
 }
 
@@ -599,7 +680,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .tile:is(:hover, :focus-visible) {
+  .tile:is(:hover, :focus-visible),
+  .resume:is(:hover, :focus-visible),
+  .resume:is(:hover, :focus-visible) .resume-go {
     transform: none;
   }
 }

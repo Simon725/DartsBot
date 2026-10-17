@@ -23,7 +23,7 @@
 .head { margin-bottom: 0.75rem; }
 
 .eyebrow {
-  font-size: 0.62rem;
+  font-size: 0.75rem;
   letter-spacing: 0.28em;
   text-transform: uppercase;
   color: var(--brass);
@@ -54,7 +54,7 @@ th, td {
 }
 
 thead th {
-  font-size: 0.68rem;
+  font-size: 0.7rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--ink-mute);
@@ -64,7 +64,7 @@ thead th {
 .leg-col {
   width: 4rem;
   text-align: left;
-  color: var(--ink-faint);
+  color: var(--ink-mute);
   font-size: 0.75rem;
   letter-spacing: 0.15em;
   text-transform: uppercase;
@@ -91,8 +91,8 @@ tbody tr:hover { background: rgba(200, 165, 87, 0.05); }
   align-items: center;
   gap: 0.35rem;
   margin-top: 0.2rem;
-  font-size: 0.68rem;
-  color: var(--ink-faint);
+  font-size: 0.7rem;
+  color: var(--ink-mute);
 }
 
 td.won .avg { color: var(--brass); }
@@ -102,7 +102,7 @@ td.won .avg { color: var(--brass); }
   border: 1px solid var(--brass-deep);
   border-radius: 999px;
   color: var(--brass);
-  font-size: 0.58rem;
+  font-size: 0.7rem;
   letter-spacing: 0.15em;
   text-transform: uppercase;
 }
@@ -113,3 +113,11 @@ tfoot th, tfoot td {
 }
 
 tfoot .avg { color: var(--brass); font-size: 1.55rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  .leg-history,
+  tbody tr {
+    animation: none;
+    transition: none;
+  }
+}

@@ -22,6 +22,7 @@ interface Standing {
   color: string;
   point: BoardPoint | null;
   distance: number | null;
+  throwLabel: string | null;
   isLeader: boolean;
 }
 
@@ -54,6 +55,27 @@ function bullRing(distance: number): 'inner' | 'outer' | null {
   if (distance <= BULL_INNER_R) return 'inner';
   if (distance <= BULL_OUTER_R) return 'outer';
   return null;
+}
+
+function segmentAt(point: BoardPoint): number {
+  const degreesFromTop = (Math.atan2(point.x, -point.y) * 180) / Math.PI;
+  const index = Math.floor((degreesFromTop + 360 + 9) / 18) % SEGMENT_ORDER.length;
+  return SEGMENT_ORDER[index]!;
+}
+
+function ringName(distance: number): string {
+  if (distance >= DOUBLE_INNER_R) return 'Double';
+  if (distance >= TRIPLE_INNER_R && distance <= TRIPLE_OUTER_R) return 'Treble';
+  return 'Single';
+}
+
+function describeThrow(point: BoardPoint): string {
+  const distance = Math.hypot(point.x, point.y);
+  const millimetres = `${distance.toFixed(1)} mm`;
+  if (distance <= BULL_INNER_R) return `Bullseye · ${millimetres}`;
+  if (distance <= BULL_OUTER_R) return `Outer bull · ${millimetres}`;
+  if (distance > DOUBLE_OUTER_R) return 'Off the board';
+  return `${ringName(distance)} ${segmentAt(point)} · ${millimetres}`;
 }
 
 function isTie(a: number, b: number): boolean {
@@ -142,6 +164,7 @@ export class BullOffComponent {
         color: this.colorFor(playerIndex),
         point,
         distance,
+        throwLabel: point ? describeThrow(point) : null,
         isLeader: distance !== null && leaderDistance !== null && isTie(distance, leaderDistance),
       };
     });
@@ -164,13 +187,6 @@ export class BullOffComponent {
 
   colorFor(playerIndex: number): string {
     return PLAYER_COLORS[playerIndex % PLAYER_COLORS.length]!;
-  }
-
-  formatDistance(distance: number): string {
-    if (distance <= BULL_INNER_R) return `Bullseye · ${distance.toFixed(1)} mm`;
-    if (distance <= BULL_OUTER_R) return `Outer bull · ${distance.toFixed(1)} mm`;
-    if (distance > DOUBLE_OUTER_R) return `Off the board`;
-    return `${distance.toFixed(1)} mm`;
   }
 
   startAiming(event: PointerEvent): void {

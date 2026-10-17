@@ -67,8 +67,8 @@
           <span class="tag">BOT</span>
         }
         <span class="distance">
-          @if (standing.distance !== null) {
-            {{ formatDistance(standing.distance) }}
+          @if (standing.throwLabel; as throwLabel) {
+            {{ throwLabel }}
           } @else if (standing.playerIndex === turnIndex()) {
             Throwing…
           } @else {
@@ -80,7 +80,8 @@
   </ol>
 
   <div class="actions">
-    @if (winner()) {
+    @if (winner(); as player) {
+      <p class="starter" role="status">{{ player.name }} throws first</p>
       <button type="button" class="primary" (click)="startMatch()">Start match</button>
     } @else if (outcome()?.kind === 'tie') {
       <button type="button" class="primary" (click)="rethrow()">Rethrow</button>
