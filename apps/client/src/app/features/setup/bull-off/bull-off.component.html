@@ -1,0 +1,97 @@
+<section class="bull-off" aria-labelledby="bull-off-title">
+  <header class="head">
+    <p class="eyebrow">{{ round() > 1 ? 'Rethrow · round ' + round() : 'Who starts?' }}</p>
+    <h2 id="bull-off-title" class="title">Throw for bull</h2>
+    <p class="prompt" aria-live="polite">
+      @if (winner(); as player) {
+        <strong>{{ player.name }}</strong> is closest and starts the match.
+      } @else if (outcome()?.kind === 'tie') {
+        <strong>{{ tiedNames() }}</strong> are tied. Throw again.
+      } @else if (currentPlayer(); as player) {
+        @if (player.isBot) {
+          <strong>{{ player.name }}</strong> is throwing…
+        } @else {
+          <strong>{{ player.name }}</strong>, tap where your dart landed.
+        }
+      }
+    </p>
+  </header>
+
+  <div class="board-wrap" [class.aiming]="isHumanTurn()">
+    <svg
+      class="board"
+      viewBox="-215 -215 430 430"
+      role="img"
+      aria-label="Dartboard"
+      (pointerdown)="startAiming($event)"
+      (pointermove)="moveAim($event)"
+      (pointerup)="stopAiming()"
+      (pointercancel)="stopAiming()"
+    >
+      <circle class="surround" r="212" />
+      @for (segment of segments; track segment.number) {
+        <path [attr.d]="segment.innerSingle" [class]="segment.isDark ? 'single-dark' : 'single-light'" />
+        <path [attr.d]="segment.treble" [class]="segment.isDark ? 'ring-red' : 'ring-green'" />
+        <path [attr.d]="segment.outerSingle" [class]="segment.isDark ? 'single-dark' : 'single-light'" />
+        <path [attr.d]="segment.double" [class]="segment.isDark ? 'ring-red' : 'ring-green'" />
+        <text class="number" [attr.x]="segment.label.x" [attr.y]="segment.label.y">{{ segment.number }}</text>
+      }
+      <circle class="ring-green" [attr.r]="BULL_OUTER_R" />
+      <circle class="ring-red" [attr.r]="BULL_INNER_R" />
+      <circle class="wire" [attr.r]="DOUBLE_OUTER_R" />
+
+      @for (standing of standings(); track standing.playerIndex) {
+        @if (standing.point; as point) {
+          <g class="dart" [class.leader]="standing.isLeader && outcome()" [attr.transform]="'translate(' + point.x + ' ' + point.y + ')'">
+            <circle class="dart-halo" r="9" [attr.fill]="standing.color" />
+            <circle class="dart-tip" r="3.2" [attr.fill]="standing.color" />
+          </g>
+        }
+      }
+
+      @if (pending(); as point) {
+        <g class="dart pending" [attr.transform]="'translate(' + point.x + ' ' + point.y + ')'">
+          <circle class="crosshair" r="12" [attr.stroke]="pendingColor()" />
+          <circle class="dart-tip" r="3.2" [attr.fill]="pendingColor()" />
+        </g>
+      }
+    </svg>
+  </div>
+
+  <ol class="standings">
+    @for (standing of standings(); track standing.playerIndex) {
+      <li class="standing" [class.current]="standing.playerIndex === turnIndex()" [class.leader]="standing.isLeader && outcome()">
+        <span class="swatch" [style.background]="standing.color"></span>
+        <span class="name">{{ standing.player.name }}</span>
+        @if (standing.player.isBot) {
+          <span class="tag">BOT</span>
+        }
+        <span class="distance">
+          @if (standing.distance !== null) {
+            {{ formatDistance(standing.distance) }}
+          } @else if (standing.playerIndex === turnIndex()) {
+            Throwing…
+          } @else {
+            Waiting
+          }
+        </span>
+      </li>
+    }
+  </ol>
+
+  <div class="actions">
+    @if (winner()) {
+      <button type="button" class="primary" (click)="startMatch()">Start match</button>
+    } @else if (outcome()?.kind === 'tie') {
+      <button type="button" class="primary" (click)="rethrow()">Rethrow</button>
+    } @else if (isHumanTurn()) {
+      <button type="button" class="primary" (click)="confirmThrow()" [disabled]="!pending()">Confirm throw</button>
+    }
+    <div class="secondary-row">
+      <button type="button" class="link" (click)="cancelled.emit()">Back to setup</button>
+      @if (!winner()) {
+        <button type="button" class="link" (click)="skip()">Skip, keep order</button>
+      }
+    </div>
+  </div>
+</section>

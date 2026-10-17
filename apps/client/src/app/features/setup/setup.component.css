@@ -5,6 +5,10 @@
   z-index: 2;
 }
 
+:host(.bull-off-open) .setup > :not(app-bull-off) {
+  display: none;
+}
+
 .setup {
   max-width: 640px;
   margin: 0 auto;

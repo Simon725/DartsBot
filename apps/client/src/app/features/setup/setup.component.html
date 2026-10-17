@@ -194,10 +194,14 @@
       <p class="error" role="alert">{{ message }}</p>
     }
     <button type="button" class="start" (click)="start()" [disabled]="creating() || startBlockedReason() !== null">
-      <span class="start-label">{{ creating() ? 'Throwing for bull…' : 'Start game' }}</span>
+      <span class="start-label">{{ creating() ? 'Starting…' : 'Start game' }}</span>
       <svg class="start-arrow" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
         <path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
       </svg>
     </button>
   </div>
+
+  @if (bullOffPlayers(); as players) {
+    <app-bull-off [players]="players" (decided)="startWithStarter($event)" (cancelled)="cancelBullOff()" />
+  }
 </section>

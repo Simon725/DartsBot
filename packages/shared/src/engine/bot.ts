@@ -235,3 +235,8 @@ export function botThrow(state: GameState, botPlayerId: string, opts: BotThrowOp
     isValid: true,
   };
 }
+
+export function botBullThrow(player: Player, rng: () => number = Math.random): { x: number; y: number } {
+  const { doubleSigma } = resolveSigmas(resolveBotConfig(player));
+  return { x: gaussian(rng) * doubleSigma, y: gaussian(rng) * doubleSigma };
+}

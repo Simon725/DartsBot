@@ -14,6 +14,7 @@ import {
 } from '@darts/shared';
 import { findGame } from '../../core/game-catalog';
 import { GameStateService } from '../../core/game-state.service';
+import { BullOffComponent } from './bull-off/bull-off.component';
 import { SegmentedControlComponent, type SegmentOption } from '../../shared/segmented-control.component';
 import { SpotlightDirective } from '../../shared/spotlight.directive';
 import { StepperComponent } from '../../shared/stepper.component';
@@ -71,9 +72,10 @@ function matchPreset(config: BotConfig): BotPresetChoice {
 
 @Component({
   selector: 'app-setup',
-  imports: [FormsModule, RouterLink, SegmentedControlComponent, SpotlightDirective, StepperComponent],
+  imports: [BullOffComponent, FormsModule, RouterLink, SegmentedControlComponent, SpotlightDirective, StepperComponent],
   templateUrl: './setup.component.html',
   styleUrl: './setup.component.css',
+  host: { '[class.bull-off-open]': 'bullOffPlayers() !== null' },
 })
 export class SetupComponent {
   private readonly gameState = inject(GameStateService);
@@ -95,6 +97,7 @@ export class SetupComponent {
   readonly players = linkedSignal(() => defaultPlayers(this.mode()));
 
   readonly creating = signal(false);
+  readonly bullOffPlayers = signal<Player[] | null>(null);
   readonly errorMessage = signal<string | null>(null);
 
   readonly isSinglePlayer = computed(() => this.mode() === '121');
@@ -172,12 +175,33 @@ export class SetupComponent {
 
   async start(): Promise<void> {
     if (this.startBlockedReason()) return;
+    const players = this.buildPlayers();
+    if (players.length > 1) {
+      this.bullOffPlayers.set(players);
+      window.scrollTo({ top: 0 });
+      return;
+    }
+    await this.createGame(players);
+  }
+
+  async startWithStarter(starterIndex: number): Promise<void> {
+    const players = this.bullOffPlayers();
+    if (!players) return;
+    await this.createGame([...players.slice(starterIndex), ...players.slice(0, starterIndex)]);
+  }
+
+  cancelBullOff(): void {
+    this.bullOffPlayers.set(null);
+  }
+
+  private async createGame(players: Player[]): Promise<void> {
     this.creating.set(true);
     this.errorMessage.set(null);
     try {
-      const gameId = this.gameState.createGame(this.buildConfig(), this.buildPlayers());
+      const gameId = this.gameState.createGame(this.buildConfig(), players);
       await this.router.navigate(['/game', gameId]);
     } catch (err) {
+      this.bullOffPlayers.set(null);
       this.errorMessage.set(err instanceof Error ? err.message : String(err));
     } finally {
       this.creating.set(false);
