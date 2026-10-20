@@ -35,6 +35,10 @@
   --ease-thud: cubic-bezier(0.34, 1.56, 0.64, 1);
 
   color-scheme: dark;
+  accent-color: var(--match-red);
+  caret-color: var(--brass);
+  scrollbar-color: var(--bg-line) transparent;
+  -webkit-tap-highlight-color: transparent;
 }
 
 * {
@@ -71,15 +75,20 @@ body::before {
 }
 
 ::selection {
-  background: var(--match-red);
+  background: rgba(210, 32, 45, 0.6);
   color: var(--cream);
 }
 
 h1, h2, h3 {
   font-family: var(--font-display);
   font-weight: 400;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
   margin: 0;
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
 }
 
 /* Reusable headline element */
@@ -117,6 +126,8 @@ input, select {
 }
 ::-webkit-scrollbar-thumb {
   background: var(--bg-line);
+  border: 2px solid transparent;
+  background-clip: padding-box;
   border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb:hover {
@@ -211,7 +222,7 @@ input, select {
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
-  animation: beam-spin 3.2s linear infinite;
+  animation: beam-spin 1.4s var(--ease-out) 1 both;
 }
 
 @keyframes beam-spin {
@@ -224,7 +235,7 @@ input, select {
   *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+    transition-property: opacity, color, background-color, border-color, outline-color, box-shadow, fill, stroke !important;
     scroll-behavior: auto !important;
   }
 }

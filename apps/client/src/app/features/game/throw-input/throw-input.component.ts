@@ -35,7 +35,9 @@ interface ThrowSubmit {
 export type ThrowInputEvent = ThrowSubmit | TurnTotalSubmit;
 
 const STORAGE_KEY = 'oche:input-mode';
-const DIGIT_COMMIT_DELAY_MS = 600;
+const DIGIT_COMMIT_DELAY_MS = 350;
+const KEYBOARD_INPUT_HOLD_MS = 400;
+const COMMIT_HAPTIC_MS = 8;
 const MULTIPLIER_KEYS: Readonly<Record<string, 1 | 2 | 3>> = { s: 1, d: 2, t: 3 };
 
 @Component({
@@ -47,6 +49,9 @@ const MULTIPLIER_KEYS: Readonly<Record<string, 1 | 2 | 3>> = { s: 1, d: 2, t: 3 
   host: { '(document:keydown)': 'onDocumentKeydown($event)' },
 })
 export class ThrowInputComponent {
+  private static nextId = 0;
+  readonly shortcutLegendId = `throw-input-shortcuts-${ThrowInputComponent.nextId++}`;
+
   readonly disabled = input(false);
   /** Whether the current game mode supports turn-total input (x01, 121). */
   readonly turnTotalSupported = input(true);
@@ -86,6 +91,8 @@ export class ThrowInputComponent {
   readonly selectedMultiplier = signal<1 | 2 | 3>(1);
   readonly pendingDigits = signal('');
   private pendingDigitsTimer: ReturnType<typeof setTimeout> | null = null;
+  readonly keyboardInput = signal(false);
+  private keyboardInputTimer: ReturnType<typeof setTimeout> | null = null;
   private wasDisabled = false;
   readonly bullScore = computed(() => (this.selectedMultiplier() === 1 ? 25 : 50));
 
@@ -238,7 +245,10 @@ export class ThrowInputComponent {
       if (disabled) this.clearPendingDigits();
       this.wasDisabled = disabled;
     });
-    inject(DestroyRef).onDestroy(() => this.clearPendingDigitsTimer());
+    inject(DestroyRef).onDestroy(() => {
+      this.clearPendingDigitsTimer();
+      this.clearKeyboardInputTimer();
+    });
   }
 
   isSegmentDimmed(segment: number): boolean {
@@ -255,7 +265,32 @@ export class ThrowInputComponent {
     const key = event.key.toLowerCase();
     const handled =
       this.handleMultiplierKey(key) || this.handleDigitKey(key) || this.handleCommandKey(key);
-    if (handled) event.preventDefault();
+    if (!handled) return;
+    event.preventDefault();
+    this.markKeyboardInput();
+  }
+
+  private markKeyboardInput(): void {
+    this.keyboardInput.set(true);
+    this.clearKeyboardInputTimer();
+    this.keyboardInputTimer = setTimeout(() => {
+      this.keyboardInputTimer = null;
+      this.keyboardInput.set(false);
+    }, KEYBOARD_INPUT_HOLD_MS);
+  }
+
+  private clearKeyboardInputTimer(): void {
+    if (this.keyboardInputTimer === null) return;
+    clearTimeout(this.keyboardInputTimer);
+    this.keyboardInputTimer = null;
+  }
+
+  private vibrateOnCommit(): void {
+    try {
+      navigator.vibrate?.(COMMIT_HAPTIC_MS);
+    } catch {
+      /* unsupported or blocked */
+    }
   }
 
   private isTurnTotalAllowed(): boolean {
@@ -343,7 +378,9 @@ export class ThrowInputComponent {
   private commitPendingDigits(): void {
     const pending = this.pendingDigits();
     this.clearPendingDigits();
-    if (pending) this.submitSegment(Number(pending));
+    if (!pending) return;
+    this.markKeyboardInput();
+    this.submitSegment(Number(pending));
   }
 
   private clearPendingDigits(): void {
@@ -422,12 +459,14 @@ export class ThrowInputComponent {
       isValid: true,
     };
     this.throwSubmitted.emit(t);
+    this.vibrateOnCommit();
     this.selectedMultiplier.set(1);
   }
 
   submitMiss(): void {
     if (this.disabled()) return;
     this.throwSubmitted.emit({ segment: 0, multiplier: 1, score: 0, isValid: true });
+    this.vibrateOnCommit();
     this.selectedMultiplier.set(1);
   }
 

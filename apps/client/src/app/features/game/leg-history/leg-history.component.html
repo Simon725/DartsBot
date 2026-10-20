@@ -1,7 +1,7 @@
 <section class="leg-history" aria-labelledby="leg-history-title">
   <header class="head">
-    <span class="eyebrow">{{ isFinished() ? 'Match report' : 'Legs so far' }}</span>
-    <h2 id="leg-history-title" class="title">Average per leg</h2>
+    <h2 id="leg-history-title" class="title">{{ isFinished() ? 'Match report' : 'Legs so far' }}</h2>
+    <p class="sub">Three-dart average per leg</p>
   </header>
 
   <div class="table-wrap">
@@ -16,7 +16,7 @@
       </thead>
       <tbody>
         @for (row of rows(); track row.number) {
-          <tr [style.animation-delay.ms]="row.number * 60">
+          <tr [style.animation-delay.ms]="row.delayMs">
             <th scope="row" class="leg-col">{{ row.number }}</th>
             @for (cell of row.cells; track cell.playerId) {
               <td [class.won]="cell.won">

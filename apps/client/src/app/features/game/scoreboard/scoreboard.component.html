@@ -1,3 +1,23 @@
+<ng-template #chalkMarks let-count>
+  @if (count > 0) {
+    <svg class="chalk" [class.closed]="count >= 3" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+      <path d="M5 15 15 5" />
+      @if (count >= 2) {
+        <path d="M5 5 15 15" />
+      }
+      @if (count >= 3) {
+        <circle cx="10" cy="10" r="8.6" />
+      }
+    </svg>
+  }
+</ng-template>
+
+<ng-template #aimMark>
+  <svg class="aim-mark" viewBox="0 0 12 12" aria-hidden="true" focusable="false">
+    <path d="M3 1.5 9 6l-6 4.5z" />
+  </svg>
+</ng-template>
+
 @if (state().modeState.mode === 'shanghai') {
   <div class="round-banner">
     <span class="round-banner-label">Round</span>
@@ -6,7 +26,7 @@
   </div>
 }
 
-<div class="scoreboard">
+<div class="scoreboard" [class.is-cricket]="state().modeState.mode === 'cricket'">
   @for (player of state().players; track player.id; let i = $index) {
     <article
       class="player"
@@ -21,7 +41,7 @@
       <header class="player-head">
         <div class="player-id">
           <span class="player-slot">P{{ i + 1 }}</span>
-          <span class="player-name">{{ player.name }}</span>
+          <span class="player-name" [attr.title]="player.name">{{ player.name }}</span>
         </div>
         <div class="player-badges">
           @if (lastTurnFor(player.id); as turn) {
@@ -35,11 +55,11 @@
           }
           @if (player.isBot) {
             <span class="badge bot">
-              BOT
+              <span class="bot-tag">BOT</span>
               @if (player.botConfig) {
-                · avg {{ player.botConfig.targetAverage }} · co {{ player.botConfig.checkoutPercent }}%
+                <span class="bot-detail">avg {{ player.botConfig.targetAverage }} · co {{ player.botConfig.checkoutPercent }}%</span>
               } @else if (player.botDifficulty) {
-                · {{ player.botDifficulty }}
+                <span class="bot-detail">{{ player.botDifficulty }}</span>
               }
             </span>
           }
@@ -57,7 +77,7 @@
           <span class="aiming-label">to checkout</span>
           <div class="remaining-hero">
             @if (i === state().currentPlayerIndex) {
-              <span class="aim-mark" aria-hidden="true">▸</span>
+              <ng-container *ngTemplateOutlet="aimMark" />
             }
             <span class="score"><app-rolling-number [value]="oneTwoOneRemaining(state()) ?? 0" /></span>
           </div>
@@ -93,7 +113,7 @@
       } @else {
         <div class="score-block">
           @if (i === state().currentPlayerIndex) {
-            <span class="aim-mark" aria-hidden="true">▸</span>
+            <ng-container *ngTemplateOutlet="aimMark" />
           }
           <span class="score" [attr.data-score]="scoreFor(state(), player.id)">
             @if (rollsScore(state())) {
@@ -120,6 +140,11 @@
                 </ol>
               }
             </div>
+          } @else if (noFinishDartsLeft(state(), player.id); as dartsLeft) {
+            <div class="checkout bogey">
+              <span class="checkout-label">Checkout</span>
+              <span class="checkout-bogey">No finish with {{ dartsLeft }} {{ dartsLeft === 1 ? 'dart' : 'darts' }}</span>
+            </div>
           }
         </div>
       }
@@ -141,8 +166,8 @@
             <span class="chip-num">{{ x01Avg(state(), player.id) }}</span>
             <span class="chip-label">avg</span>
           </div>
-          <div class="chip-sep" aria-hidden="true"></div>
-          <div class="stat-chip">
+          <div class="chip-sep first9" aria-hidden="true"></div>
+          <div class="stat-chip first9">
             <span class="chip-num">{{ x01First9Avg(state(), player.id) }}</span>
             <span class="chip-label">1st&nbsp;9</span>
           </div>
@@ -159,10 +184,9 @@
           @for (n of cricketNumbers; track n) {
             <div class="cricket-row" [class.closed]="marks[n] >= 3">
               <span class="cricket-num">{{ n === 25 ? 'B' : n }}</span>
-              <span class="cricket-pips">
-                <span class="pip" [class.lit]="marks[n] >= 1"></span>
-                <span class="pip" [class.lit]="marks[n] >= 2"></span>
-                <span class="pip" [class.lit]="marks[n] >= 3"></span>
+              <span class="visually-hidden">{{ marks[n] >= 3 ? 'closed' : marks[n] + ' of 3' }}</span>
+              <span class="cricket-mark" aria-hidden="true">
+                <ng-container *ngTemplateOutlet="chalkMarks; context: { $implicit: marks[n] }" />
               </span>
             </div>
           }
@@ -205,27 +229,39 @@
 </div>
 
 @if (state().modeState.mode === 'cricket') {
-  <table class="cricket-grid" aria-label="Cricket marks by player">
+  <table class="cricket-grid" aria-label="Cricket marks and points by player">
     <thead>
       <tr>
         <th scope="col"><span class="visually-hidden">Number</span></th>
         @for (player of state().players; track player.id; let i = $index) {
-          <th scope="col" [class.active]="i === state().currentPlayerIndex">{{ player.name }}</th>
+          <th
+            scope="col"
+            [class.active]="i === state().currentPlayerIndex"
+            [attr.aria-current]="i === state().currentPlayerIndex ? 'true' : null"
+          >
+            <span class="grid-name">{{ player.name }}</span>
+            <span class="grid-points">
+              <app-rolling-number [value]="cricketPoints(state(), player.id)" />
+              <span class="visually-hidden">points</span>
+            </span>
+          </th>
         }
       </tr>
     </thead>
     <tbody>
       @for (n of cricketNumbers; track n) {
-        <tr [class.dead]="isCricketClosedByAll(state(), n)">
-          <th scope="row">{{ n === 25 ? 'B' : n }}</th>
+        @let deadRow = isCricketClosedByAll(state(), n);
+        <tr [class.dead]="deadRow">
+          <th scope="row">
+            {{ n === 25 ? 'B' : n }}
+            @if (deadRow) {
+              <span class="visually-hidden">, closed by all</span>
+            }
+          </th>
           @for (player of state().players; track player.id; let i = $index) {
             @let count = cricketMarkCount(state(), player.id, n);
-            <td [class.active]="i === state().currentPlayerIndex" [class.closed]="count >= 3" [attr.aria-label]="player.name + ': ' + count + ' of 3'">
-              <span class="cricket-pips" aria-hidden="true">
-                <span class="pip" [class.lit]="count >= 1"></span>
-                <span class="pip" [class.lit]="count >= 2"></span>
-                <span class="pip" [class.lit]="count >= 3"></span>
-              </span>
+            <td [class.active]="i === state().currentPlayerIndex" [class.closed]="count >= 3" [attr.aria-label]="cricketMarkLabel(player.name, count)">
+              <ng-container *ngTemplateOutlet="chalkMarks; context: { $implicit: count }" />
             </td>
           }
         </tr>

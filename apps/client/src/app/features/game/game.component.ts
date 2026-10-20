@@ -12,15 +12,31 @@ import {
 } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import type { CheckoutMode, GameState, Throw } from '@darts/shared';
+import {
+  threeDartAverage,
+  x01MatchTotals,
+  type CheckoutMode,
+  type GameState,
+  type Throw,
+} from '@darts/shared';
 import { GameStateService, type TurnSummary } from '../../core/game-state.service';
 import { ScoreboardComponent } from './scoreboard/scoreboard.component';
 import { ThrowInputComponent } from './throw-input/throw-input.component';
 import { LegHistoryComponent } from './leg-history/leg-history.component';
 
 const TURN_TOAST_MS = 2500;
+const TURN_TOAST_EXIT_MS = 150;
+const DARTS_PER_TURN = 3;
+const BUST_HAPTIC = [20, 40, 20];
+const LEG_WON_HAPTIC_MS = 30;
 
 const CRICKET_SEGMENTS: readonly number[] = [20, 19, 18, 17, 16, 15, 25];
+
+interface TurnSlot {
+  label: string;
+  thrown: boolean;
+  valid: boolean;
+}
 
 const FOCUSABLE_SELECTOR =
   'button:not([disabled]), [href], input:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -31,6 +47,7 @@ const FOCUSABLE_SELECTOR =
   imports: [ScoreboardComponent, ThrowInputComponent, LegHistoryComponent],
   templateUrl: './game.component.html',
   styleUrl: './game.component.css',
+  host: { '(document:keydown)': 'onDocumentKeydown($event)' },
 })
 export class GameComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
@@ -43,6 +60,7 @@ export class GameComponent implements OnInit {
   private readonly endMatchDialog = viewChild<ElementRef<HTMLElement>>('endMatchDialog');
 
   private turnToastTimer: ReturnType<typeof setTimeout> | undefined;
+  private turnToastExitTimer: ReturnType<typeof setTimeout> | undefined;
   private wakeLock: WakeLockSentinel | null = null;
   private focusBeforeDialog: HTMLElement | null = null;
 
@@ -53,9 +71,69 @@ export class GameComponent implements OnInit {
   readonly legWon = this.gameStateService.legWon;
 
   readonly turnToast = signal<TurnSummary | null>(null);
+  readonly turnToastLeaving = signal(false);
   readonly endMatchDialogOpen = signal(false);
 
+  readonly turnToasts = computed(() => {
+    const toast = this.turnToast();
+    return toast ? [toast] : [];
+  });
+
   readonly isMatchActive = computed(() => this.state()?.status === 'active');
+
+  readonly matchNotFound = computed(() => !this.state() && this.error() !== null);
+
+  readonly dialogOpen = computed(() => this.legWon() !== null || this.endMatchDialogOpen());
+
+  readonly matchLength = computed(() => {
+    const config = this.state()?.config;
+    if (config?.mode !== 'x01') return null;
+    return config.sets === 1 ? `First to ${config.legsPerSet}` : `First to ${config.sets} sets`;
+  });
+
+  readonly currentTurnSlots = computed<TurnSlot[]>(() => {
+    const throws = this.state()?.currentThrows ?? [];
+    return Array.from({ length: DARTS_PER_TURN }, (_, index) => turnSlot(throws[index]));
+  });
+
+  readonly currentTurnTotal = computed(() => {
+    if (!this.turnTotalAvailableInMode()) return null;
+    const throws = this.state()?.currentThrows ?? [];
+    return throws.reduce((sum, t) => sum + (t.isValid ? t.score : 0), 0);
+  });
+
+  readonly currentTurnDescription = computed(() => {
+    const darts = this.currentTurnSlots().map((slot) => (slot.thrown ? slot.label : 'not thrown'));
+    const total = this.currentTurnTotal();
+    const totalText = total === null ? '' : `. Total ${total}`;
+    return `Darts this turn: ${darts.join(', ')}${totalText}`;
+  });
+
+  readonly legWonCheckout = computed(() => {
+    const checkout = this.legWon()?.checkout;
+    return checkout ? `Checked out on ${throwLabel(checkout)}` : null;
+  });
+
+  readonly legsScore = computed(() => {
+    const s = this.state();
+    if (!s || s.modeState.mode !== 'x01' || s.config.mode !== 'x01') return null;
+    const ms = s.modeState;
+    const legs = `Legs ${s.players.map((p) => ms.legs[p.id] ?? 0).join('–')}`;
+    if (s.config.sets === 1) return legs;
+    return `Sets ${s.players.map((p) => ms.sets[p.id] ?? 0).join('–')} · ${legs}`;
+  });
+
+  readonly legWonDetail = computed(() =>
+    [this.legWonCheckout(), this.legsScore()].filter((part) => part !== null).join(' · '),
+  );
+
+  readonly winnerAverage = computed(() => {
+    const s = this.state();
+    const winner = this.winner();
+    if (!s || !winner || s.modeState.mode !== 'x01') return null;
+    const totals = x01MatchTotals(s.modeState, winner.id);
+    return threeDartAverage(totals.scored, totals.darts)?.toFixed(2) ?? null;
+  });
 
   readonly legWonAverage = computed(() => {
     const average = this.legWon()?.average;
@@ -207,18 +285,43 @@ export class GameComponent implements OnInit {
 
   constructor() {
     effect(() => this.showTurnToast(this.gameStateService.lastTurn()));
+    effect(() => this.signalLegWon(this.legWon() !== null));
     effect(() => this.syncWakeLock(this.isMatchActive()));
     effect(() => this.focusDialog(this.legWonDialog()));
     effect(() => this.focusDialog(this.endMatchDialog()));
     this.watchVisibility();
     this.destroyRef.onDestroy(() => {
       clearTimeout(this.turnToastTimer);
+      clearTimeout(this.turnToastExitTimer);
       this.releaseWakeLock();
     });
   }
 
   undo(): void {
     this.gameStateService.undo();
+  }
+
+  undoLastDart(): void {
+    this.gameStateService.undo();
+    this.restoreFocus();
+  }
+
+  onDocumentKeydown(event: KeyboardEvent): void {
+    if (!isUndoShortcut(event) || event.repeat || event.defaultPrevented) return;
+    if (this.dialogOpen() || isTypingTarget(event.target) || !this.canUndo()) return;
+    event.preventDefault();
+    this.undo();
+  }
+
+  rematch(): void {
+    const s = this.state();
+    if (!s) return;
+    const id = this.gameStateService.createGame(s.config, s.players);
+    void this.router.navigate(['/game', id]);
+  }
+
+  goHome(): void {
+    void this.router.navigate(['/']);
   }
 
   ngOnInit(): void {
@@ -289,18 +392,37 @@ export class GameComponent implements OnInit {
     this.cancelExit();
   }
 
-  private goHome(): void {
-    void this.router.navigate(['/']);
-  }
-
   private showTurnToast(turn: TurnSummary | null): void {
     clearTimeout(this.turnToastTimer);
+    clearTimeout(this.turnToastExitTimer);
+    this.turnToastLeaving.set(false);
     if (!turn || untracked(this.legWon)) {
       this.turnToast.set(null);
       return;
     }
+    if (turn.bust) this.vibrate(BUST_HAPTIC);
     this.turnToast.set(turn);
-    this.turnToastTimer = setTimeout(() => this.turnToast.set(null), TURN_TOAST_MS);
+    this.turnToastTimer = setTimeout(() => this.hideTurnToast(), TURN_TOAST_MS);
+  }
+
+  private hideTurnToast(): void {
+    this.turnToastLeaving.set(true);
+    this.turnToastExitTimer = setTimeout(() => {
+      this.turnToast.set(null);
+      this.turnToastLeaving.set(false);
+    }, TURN_TOAST_EXIT_MS);
+  }
+
+  private signalLegWon(won: boolean): void {
+    if (won) this.vibrate(LEG_WON_HAPTIC_MS);
+  }
+
+  private vibrate(pattern: VibratePattern): void {
+    try {
+      this.document.defaultView?.navigator.vibrate?.(pattern);
+    } catch {
+      return;
+    }
   }
 
   private focusDialog(dialog: ElementRef<HTMLElement> | undefined): void {
@@ -378,6 +500,32 @@ function matchFormat(sets: number, legsPerSet: number): string {
   const legs = `${legsPerSet} ${legsPerSet === 1 ? 'leg' : 'legs'}`;
   if (sets === 1) return `First to ${legs}`;
   return `First to ${sets} sets · ${legs} per set`;
+}
+
+function turnSlot(t: Throw | undefined): TurnSlot {
+  if (!t) return { label: '–', thrown: false, valid: true };
+  return { label: throwLabel(t), thrown: true, valid: t.isValid };
+}
+
+function throwLabel(t: Throw): string {
+  if (t.segment === 0) return 'Miss';
+  if (t.segment === 25) return t.multiplier === 2 ? 'Bull' : '25';
+  if (t.multiplier === 3) return `T${t.segment}`;
+  if (t.multiplier === 2) return `D${t.segment}`;
+  return String(t.segment);
+}
+
+function isUndoShortcut(event: KeyboardEvent): boolean {
+  if (event.altKey || event.shiftKey) return false;
+  const commandKey = event.ctrlKey || event.metaKey;
+  if (event.key === 'Backspace') return !commandKey;
+  return commandKey && event.key.toLowerCase() === 'z';
+}
+
+function isTypingTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.isContentEditable) return true;
+  return ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName);
 }
 
 function focusableIn(container: HTMLElement): HTMLElement[] {

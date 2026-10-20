@@ -63,6 +63,80 @@ describe('checkout-table', () => {
     expect(mismatches).toEqual([]);
   });
 
+  describe('with fewer darts left', () => {
+    const segScore = (s: string): number => {
+      if (s === 'BULL') return 50;
+      if (s === '25') return 25;
+      if (s.startsWith('T')) return parseInt(s.slice(1), 10) * 3;
+      if (s.startsWith('D')) return parseInt(s.slice(1), 10) * 2;
+      return parseInt(s, 10);
+    };
+
+    it('returns null for 141 with 2 darts', () => {
+      expect(getCheckout(141, 2)).toBe(null);
+    });
+
+    it('returns T20 D20 for 100 with 2 darts', () => {
+      expect(getCheckout(100, 2)?.route).toEqual(['T20', 'D20']);
+    });
+
+    it('returns T20 BULL for 110 with 2 darts', () => {
+      expect(getCheckout(110, 2)?.route).toEqual(['T20', 'BULL']);
+    });
+
+    it('returns null for 99 and 102 with 2 darts', () => {
+      expect(getCheckout(99, 2)).toBe(null);
+      expect(getCheckout(102, 2)).toBe(null);
+    });
+
+    it('returns D20 for 40 with 1 dart', () => {
+      expect(getCheckout(40, 1)?.route).toEqual(['D20']);
+    });
+
+    it('returns BULL for 50 with 1 dart', () => {
+      expect(getCheckout(50, 1)?.route).toEqual(['BULL']);
+    });
+
+    it('returns null for odd or out-of-reach scores with 1 dart', () => {
+      expect(getCheckout(41, 1)).toBe(null);
+      expect(getCheckout(42, 1)).toBe(null);
+      expect(getCheckout(60, 1)).toBe(null);
+    });
+
+    it('returns null for bogeys with fewer darts', () => {
+      expect(getCheckout(169, 2)).toBe(null);
+      expect(getCheckout(169, 1)).toBe(null);
+    });
+
+    it('keeps 3-dart behaviour as the default', () => {
+      expect(getCheckout(141, 3)).toEqual(getCheckout(141));
+      expect(getCheckout(169, 3)?.isBogey).toBe(true);
+    });
+
+    it('every route fits the darts left, sums up and ends on a double', () => {
+      const problems: string[] = [];
+      for (const darts of [1, 2] as const) {
+        for (let n = 2; n <= 170; n++) {
+          const route = getCheckout(n, darts)?.route;
+          if (!route) continue;
+          const last = route[route.length - 1];
+          const sum = route.reduce((a, b) => a + segScore(b), 0);
+          if (route.length > darts) problems.push(`${n}/${darts}: too long ${route.join('+')}`);
+          if (sum !== n) problems.push(`${n}/${darts}: sums to ${sum}`);
+          if (!last.startsWith('D') && last !== 'BULL') problems.push(`${n}/${darts}: ends on ${last}`);
+        }
+      }
+      expect(problems).toEqual([]);
+    });
+
+    it('finds a 2-dart route for every score that has one', () => {
+      expect(getCheckout(101, 2)?.route).toEqual(['T17', 'BULL']);
+      for (let n = 2; n <= 98; n++) {
+        expect(getCheckout(n, 2), `missing 2-dart route for ${n}`).not.toBe(null);
+      }
+    });
+  });
+
   it('every non-bogey route ends on a double or bull', () => {
     for (let n = 2; n <= 170; n++) {
       if (isBogeyNumber(n)) continue;

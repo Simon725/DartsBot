@@ -13,7 +13,9 @@ import { RollingNumberComponent } from './rolling-number.component';
         (click)="change(-1)"
         [attr.aria-label]="'Fewer ' + label()"
       >
-        &minus;
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <path d="M6 12h12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+        </svg>
       </button>
       <output class="value" aria-live="polite">
         <app-rolling-number [value]="value()" />
@@ -25,7 +27,9 @@ import { RollingNumberComponent } from './rolling-number.component';
         (click)="change(1)"
         [attr.aria-label]="'More ' + label()"
       >
-        +
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <path d="M6 12h12M12 6v12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+        </svg>
       </button>
     </div>
   `,
@@ -45,22 +49,30 @@ import { RollingNumberComponent } from './rolling-number.component';
     }
 
     .step {
+      display: grid;
+      place-items: center;
       height: 44px;
       border-radius: 999px;
-      font-size: 1.3rem;
-      font-weight: 500;
       color: var(--brass);
-      transition: background 0.2s var(--ease-out), color 0.2s var(--ease-out),
-        transform 0.2s var(--ease-thud);
+      transition: background-color 0.2s var(--ease-out), color 0.2s var(--ease-out),
+        transform 110ms cubic-bezier(0.23, 1, 0.32, 1);
     }
 
-    .step:hover:not(:disabled) {
-      background: rgba(200, 165, 87, 0.12);
-      color: var(--cream);
+    @media (hover: hover) and (pointer: fine) {
+      .step:hover:not(:disabled) {
+        background: rgba(200, 165, 87, 0.12);
+        color: var(--cream);
+      }
     }
 
     .step:active:not(:disabled) {
-      transform: scale(0.92);
+      transform: scale(0.97);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .step:active:not(:disabled) {
+        transform: none;
+      }
     }
 
     .step:disabled {

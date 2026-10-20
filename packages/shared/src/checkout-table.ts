@@ -189,15 +189,60 @@ const BOGEYS = new Set<number>([169, 168, 166, 165, 163, 162, 159]);
 
 for (const n of BOGEYS) TABLE[n] = null;
 
+export type DartsLeft = 1 | 2 | 3;
+
+const SEGMENTS = Array.from({ length: 20 }, (_, i) => 20 - i);
+
+const SETUP_DARTS: string[] = [
+  ...SEGMENTS.map((n) => `T${n}`),
+  'BULL',
+  '25',
+  ...SEGMENTS.map(String),
+  ...SEGMENTS.map((n) => `D${n}`),
+];
+
+function segmentScore(segment: string): number {
+  if (segment === 'BULL') return 50;
+  if (segment.startsWith('T')) return Number(segment.slice(1)) * 3;
+  if (segment.startsWith('D')) return Number(segment.slice(1)) * 2;
+  return Number(segment);
+}
+
+function finishingDart(remaining: number): string | null {
+  if (remaining === 50) return 'BULL';
+  if (remaining % 2 !== 0 || remaining < 2 || remaining > 40) return null;
+  return `D${remaining / 2}`;
+}
+
+function twoDartRoute(remaining: number): string[] | null {
+  for (const setup of SETUP_DARTS) {
+    const finish = finishingDart(remaining - segmentScore(setup));
+    if (finish) return [setup, finish];
+  }
+  return null;
+}
+
+function routeWithin(remaining: number, dartsLeft: 1 | 2): string[] | null {
+  const tableRoute = TABLE[remaining];
+  if (tableRoute && tableRoute.length <= dartsLeft) return tableRoute;
+  if (dartsLeft === 1) return null;
+  return twoDartRoute(remaining);
+}
+
 /**
  * Returns the canonical checkout route for the given remaining score,
- * or null if no finish is suggested (out of range or bogey).
+ * or null if no finish is suggested (out of range, or no finish within dartsLeft).
+ * With 3 darts left, bogey numbers return a suggestion with route = null.
  *
  * @param remaining points left
- * @returns suggestion or null when no route is shown (e.g. > 170, < 2, or score = 1)
+ * @param dartsLeft darts still to throw this visit
  */
-export function getCheckout(remaining: number): CheckoutSuggestion | null {
+export function getCheckout(remaining: number, dartsLeft: DartsLeft = 3): CheckoutSuggestion | null {
   if (remaining > 170 || remaining < 2) return null;
+  if (dartsLeft < 3) {
+    const route = routeWithin(remaining, dartsLeft as 1 | 2);
+    return route ? { remaining, route, isBogey: false } : null;
+  }
   const route = TABLE[remaining];
   if (route === undefined) return null;
   return {

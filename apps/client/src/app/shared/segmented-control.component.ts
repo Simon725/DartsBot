@@ -71,11 +71,23 @@ export interface SegmentOption<T> {
       font-weight: 600;
       color: var(--ink-mute);
       white-space: nowrap;
-      transition: color 0.2s var(--ease-out);
+      transition: color 0.2s var(--ease-out), transform 110ms cubic-bezier(0.23, 1, 0.32, 1);
     }
 
-    .segment:hover {
-      color: var(--cream);
+    @media (hover: hover) and (pointer: fine) {
+      .segment:hover {
+        color: var(--cream);
+      }
+    }
+
+    .segment:active {
+      transform: scale(0.97);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .segment:active {
+        transform: none;
+      }
     }
 
     .segment.active {

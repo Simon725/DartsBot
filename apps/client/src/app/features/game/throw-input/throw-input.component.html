@@ -3,6 +3,7 @@
   appSpotlight
   [class.disabled]="disabled()"
   [attr.data-armed]="selectedMultiplier()"
+  [attr.data-input]="keyboardInput() ? 'keyboard' : null"
 >
   <div
     class="mode-tabs"
@@ -63,7 +64,7 @@
       }
     </div>
 
-    <div class="segments">
+    <div class="segments" [attr.aria-describedby]="shortcutLegendId">
       @for (s of (inputMode() === 'board' ? boardSegments : numericSegments); track s) {
         <button
           type="button"
@@ -106,6 +107,12 @@
       <span><kbd>25</kbd><kbd>B</kbd> bull</span>
       <span><kbd>0</kbd><kbd>M</kbd> miss</span>
       <span><kbd>↵</kbd> commit</span>
+      <span><kbd>⌫</kbd><kbd>Ctrl+Z</kbd> undo</span>
+    </p>
+    <p class="visually-hidden" [id]="shortcutLegendId">
+      Keyboard shortcuts: S, D or T sets single, double or treble. Type 1 to 20 for a segment.
+      25 or B scores bull. 0 or M records a miss. Enter commits a pending number.
+      Backspace or Control Z undoes the last dart.
     </p>
   }
 
@@ -123,7 +130,7 @@
           (ngModelChange)="totalScore.set($event)"
           (keydown.enter)="submitTotal()"
           [disabled]="disabled()"
-          placeholder="0 to 180"
+          placeholder="0–180"
         />
       </label>
       @if (totalError(); as err) {

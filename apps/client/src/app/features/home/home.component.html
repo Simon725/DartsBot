@@ -103,11 +103,12 @@
             }
             @case ('121') {
               <div class="drill-visual">
-                <div class="drill-window">
-                  <div class="drill-reel">
-                    <span>121</span>
-                    <span>122</span>
-                  </div>
+                <div class="drill-target">
+                  <span class="drill-from">121</span>
+                  <svg class="drill-arrow" viewBox="0 0 24 24">
+                    <path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                  <span class="drill-next">122</span>
                 </div>
                 <div class="drill-darts">
                   @for (dart of checkoutDarts; track dart) {

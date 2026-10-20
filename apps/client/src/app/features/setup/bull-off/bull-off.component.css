@@ -1,6 +1,8 @@
 :host {
+  --action-red: #c41e2a;
+  --press-ease: cubic-bezier(0.23, 1, 0.32, 1);
   display: block;
-  animation: fade-up 0.4s var(--ease-out) both;
+  animation: fade-up 0.3s var(--ease-out) both;
 }
 
 .bull-off {
@@ -115,14 +117,16 @@
 }
 
 .dart:not(.pending) .dart-tip {
-  animation: land 0.35s var(--ease-thud) both;
+  animation: land 0.26s var(--press-ease) both;
   transform-box: fill-box;
   transform-origin: center;
 }
 
 .dart.leader .dart-halo {
   opacity: 0.6;
-  animation: halo 1.4s ease-in-out infinite;
+  animation:
+    halo-reveal 0.3s var(--press-ease) both,
+    halo 2.4s ease-in-out 0.3s infinite;
   transform-box: fill-box;
   transform-origin: center;
 }
@@ -150,7 +154,10 @@
   border-radius: 12px;
   border: 1px solid var(--bg-line);
   background: rgba(28, 23, 21, 0.75);
-  transition: border-color 0.2s var(--ease-out), background 0.2s var(--ease-out);
+  transition:
+    border-color 0.2s var(--ease-out),
+    background-color 0.2s var(--ease-out),
+    box-shadow 0.3s var(--ease-out);
 }
 
 .standing.current {
@@ -193,15 +200,6 @@
   white-space: nowrap;
 }
 
-.starter {
-  margin: 0;
-  text-align: center;
-  font-family: var(--font-display);
-  font-size: 1.5rem;
-  letter-spacing: 0.06em;
-  color: var(--cream);
-}
-
 .actions {
   display: flex;
   flex-direction: column;
@@ -211,22 +209,27 @@
 .primary {
   min-height: 52px;
   border-radius: 999px;
-  background: var(--match-red);
+  background: var(--action-red);
   color: var(--cream);
   font-size: 1.05rem;
   letter-spacing: 0.03em;
   box-shadow: 0 8px 24px var(--match-red-glow);
-  transition: transform 0.2s var(--ease-thud), opacity 0.2s;
+  transition:
+    transform 120ms var(--press-ease),
+    background-color 0.2s var(--ease-out),
+    color 0.2s var(--ease-out),
+    box-shadow 0.2s var(--ease-out);
 }
 
-.primary:hover:not(:disabled) {
-  transform: translateY(-2px);
+.primary:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .primary:disabled {
-  opacity: 0.4;
+  background: var(--bg-elev-2);
+  color: var(--ink-mute);
+  box-shadow: inset 0 0 0 1px var(--bg-line);
   cursor: not-allowed;
-  box-shadow: none;
 }
 
 .secondary-row {
@@ -240,20 +243,32 @@
   padding: 0 0.5rem;
   color: var(--ink-mute);
   font-size: 0.88rem;
+  transition: color 0.2s var(--ease-out);
 }
 
-.link:hover {
-  color: var(--cream);
+@media (hover: hover) and (pointer: fine) {
+  .primary:hover:not(:disabled) {
+    box-shadow: 0 10px 30px var(--match-red-glow);
+  }
+
+  .link:hover {
+    color: var(--cream);
+  }
 }
 
 @keyframes land {
-  from { transform: scale(2.4); opacity: 0; }
+  from { transform: scale(1.8); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes halo-reveal {
+  from { transform: scale(0.5); opacity: 0; }
+  to { transform: scale(1); opacity: 0.6; }
 }
 
 @keyframes halo {
   0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.5); }
+  50% { transform: scale(1.4); }
 }
 
 @media (min-width: 900px) {
@@ -274,7 +289,6 @@
   .head { grid-area: head; text-align: left; }
   .standings { grid-area: standings; }
   .actions { grid-area: actions; }
-  .starter { text-align: left; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -283,12 +297,7 @@
   .dart-halo {
     animation: none !important;
   }
-  .primary,
-  .board-wrap,
-  .standing {
-    transition: none;
-  }
-  .primary:hover:not(:disabled) {
+  .primary:active:not(:disabled) {
     transform: none;
   }
 }

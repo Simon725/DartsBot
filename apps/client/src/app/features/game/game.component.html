@@ -1,5 +1,13 @@
 <section class="game">
-  @if (!state()) {
+  @if (matchNotFound()) {
+    <div class="not-found" role="alert">
+      <h1 class="not-found-title">Match not found</h1>
+      <p class="not-found-text">
+        This match is no longer saved on this device. It may have finished or been ended.
+      </p>
+      <button type="button" class="dialog-btn is-primary" (click)="goHome()">Home</button>
+    </div>
+  } @else if (!state()) {
     <div class="loading">
       <span class="loading-mark" aria-hidden="true"></span>
       <span>Joining match…</span>
@@ -7,8 +15,12 @@
   } @else {
     <header class="game-header">
       <div class="title-block">
-        <span class="eyebrow">Now playing</span>
-        <h1 class="game-title">{{ title() }}</h1>
+        <h1 class="game-title">
+          {{ title() }}
+          @if (matchLength(); as length) {
+            <span class="match-length">{{ length }}</span>
+          }
+        </h1>
         <p class="game-sub">{{ subtitle() }}</p>
       </div>
       <button
@@ -18,11 +30,18 @@
         (click)="requestExit()"
       >
         @if (isMatchActive()) {
-          <span>End match</span>
-          <span class="exit-x" aria-hidden="true">×</span>
+          <span>Leave</span>
+          <svg class="exit-icon" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M8 3.5H5A1.5 1.5 0 003.5 5v10A1.5 1.5 0 005 16.5h3"/>
+            <path d="M12.5 6.5L16 10l-3.5 3.5"/>
+            <path d="M16 10H8"/>
+          </svg>
         } @else {
           <span>New game</span>
-          <span class="exit-x" aria-hidden="true">→</span>
+          <svg class="exit-icon" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 10h12"/>
+            <path d="M11.5 5.5L16 10l-4.5 4.5"/>
+          </svg>
         }
       </button>
     </header>
@@ -37,7 +56,7 @@
 
       <aside class="board-side" [class.is-finished]="winner()">
         @if (winner()) {
-          <div class="winner-banner" role="status">
+          <div class="winner-banner">
             <div class="winner-inner">
               <span class="trophy" aria-hidden="true">
                 <svg viewBox="0 0 32 32" width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -46,18 +65,26 @@
                   <path d="M14 16v4M18 16v4M12 22h8v4h-8z"/>
                 </svg>
               </span>
-              <div class="winner-text">
-                <span class="winner-label">Game · Set · Match</span>
+              <div class="winner-text" role="status">
                 <h2 class="winner-name">{{ winner()!.name }}</h2>
-                <span class="winner-sub">Winner takes the oche.</span>
+                <p class="winner-sub">Game, set and match.</p>
+                @if (winnerAverage(); as average) {
+                  <p class="winner-average">Match average <strong>{{ average }}</strong></p>
+                }
               </div>
+            </div>
+            <div class="winner-actions">
+              <button type="button" class="dialog-btn is-primary" (click)="rematch()">Rematch</button>
+              <button type="button" class="dialog-btn" (click)="goHome()">Home</button>
             </div>
           </div>
         } @else {
           <div class="turn-row">
             <div class="turn-indicator">
               @if (currentPlayer()) {
-                <span class="turn-arrow" aria-hidden="true">▸</span>
+                <svg class="turn-marker" viewBox="0 0 10 12" width="9" height="11" aria-hidden="true">
+                  <path d="M1.5 1.5l7 4.5-7 4.5z" fill="currentColor"/>
+                </svg>
                 <span class="turn-text">
                   <strong>{{ currentPlayer()!.name }}</strong>
                   @if (currentPlayer()!.isBot) {
@@ -69,8 +96,8 @@
               }
             </div>
             <div class="turn-toast-region" aria-live="polite" aria-atomic="true">
-              @if (turnToast(); as turn) {
-                <span class="turn-toast" [class.is-bust]="turn.bust">
+              @for (turn of turnToasts(); track turn) {
+                <span class="turn-toast" [class.is-bust]="turn.bust" [class.is-leaving]="turnToastLeaving()">
                   @if (turn.bust) {
                     {{ turn.playerName }} — <strong>BUST</strong>
                   } @else {
@@ -79,6 +106,14 @@
                 </span>
               }
             </div>
+          </div>
+          <div class="turn-strip" role="group" [attr.aria-label]="currentTurnDescription()">
+            @for (slot of currentTurnSlots(); track $index) {
+              <span class="turn-slot" [class.is-empty]="!slot.thrown" [class.is-invalid]="!slot.valid" aria-hidden="true">{{ slot.label }}</span>
+            }
+            @if (currentTurnTotal() !== null) {
+              <span class="turn-strip-total" aria-hidden="true">{{ currentTurnTotal() }}</span>
+            }
           </div>
           <app-throw-input
             [disabled]="inputDisabled()"
@@ -117,7 +152,7 @@
 </section>
 
 @if (legWon(); as leg) {
-  <div class="dialog-backdrop" (click)="nextLeg()">
+  <div class="dialog-backdrop">
     <div
       #legWonDialog
       class="dialog leg-won"
@@ -125,25 +160,29 @@
       aria-modal="true"
       aria-labelledby="leg-won-title"
       aria-describedby="leg-won-stats"
-      (click)="$event.stopPropagation()"
       (keydown)="onLegWonKeydown($event)"
     >
-      <span class="dialog-eyebrow">Leg won</span>
       <h2 id="leg-won-title" class="dialog-title">
         Leg {{ leg.legNumber }} to <span class="leg-won-name">{{ leg.winnerName }}</span>
       </h2>
-      <dl id="leg-won-stats" class="leg-won-stats">
-        <div class="stat">
-          <dt>Darts</dt>
-          <dd>{{ leg.darts }}</dd>
-        </div>
-        <div class="stat">
-          <dt>Average</dt>
-          <dd>{{ legWonAverage() }}</dd>
-        </div>
-      </dl>
+      <div id="leg-won-stats">
+        @if (legWonDetail()) {
+          <p class="dialog-text leg-won-detail">{{ legWonDetail() }}</p>
+        }
+        <dl class="leg-won-stats">
+          <div class="stat">
+            <dt>Darts</dt>
+            <dd>{{ leg.darts }}</dd>
+          </div>
+          <div class="stat">
+            <dt>Average</dt>
+            <dd>{{ legWonAverage() }}</dd>
+          </div>
+        </dl>
+      </div>
       <div class="dialog-actions">
         <button type="button" class="dialog-btn is-primary" (click)="nextLeg()">Next leg</button>
+        <button type="button" class="dialog-btn" (click)="undoLastDart()">Undo last dart</button>
       </div>
     </div>
   </div>
@@ -161,15 +200,14 @@
       (click)="$event.stopPropagation()"
       (keydown)="onEndMatchKeydown($event)"
     >
-      <span class="dialog-eyebrow">Leaving the oche?</span>
-      <h2 id="end-match-title" class="dialog-title">End this match?</h2>
+      <h2 id="end-match-title" class="dialog-title">Leave this match?</h2>
       <p id="end-match-desc" class="dialog-text">
         Keep it for later to resume from the home screen, or end it for good.
       </p>
       <div class="dialog-actions">
         <button type="button" class="dialog-btn is-primary" (click)="keepForLater()">Keep for later</button>
-        <button type="button" class="dialog-btn is-danger" (click)="endMatch()">End match</button>
         <button type="button" class="dialog-btn" (click)="cancelExit()">Cancel</button>
+        <button type="button" class="dialog-btn is-danger" (click)="endMatch()">End match</button>
       </div>
     </div>
   </div>

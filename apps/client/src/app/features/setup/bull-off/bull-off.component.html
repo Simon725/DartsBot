@@ -1,13 +1,17 @@
 <section class="bull-off" aria-labelledby="bull-off-title">
   <header class="head">
-    <p class="eyebrow">{{ round() > 1 ? 'Rethrow · round ' + round() : 'Who starts?' }}</p>
     <h2 id="bull-off-title" class="title">Throw for bull</h2>
     <p class="prompt" aria-live="polite">
       @if (winner(); as player) {
-        <strong>{{ player.name }}</strong> is closest and starts the match.
+        <strong>{{ player.name }}</strong> is closest and throws first.
       } @else if (outcome()?.kind === 'tie') {
         <strong>{{ tiedNames() }}</strong> are tied. Throw again.
       } @else if (currentPlayer(); as player) {
+        @if (round() === 1) {
+          Closest to the bull starts.
+        } @else {
+          Rethrow, round {{ round() }}.
+        }
         @if (player.isBot) {
           <strong>{{ player.name }}</strong> is throwing…
         } @else {
@@ -80,8 +84,7 @@
   </ol>
 
   <div class="actions">
-    @if (winner(); as player) {
-      <p class="starter" role="status">{{ player.name }} throws first</p>
+    @if (winner()) {
       <button type="button" class="primary" (click)="startMatch()">Start match</button>
     } @else if (outcome()?.kind === 'tie') {
       <button type="button" class="primary" (click)="rethrow()">Rethrow</button>

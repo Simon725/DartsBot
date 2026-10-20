@@ -1,4 +1,6 @@
 :host {
+  --action-red: #c41e2a;
+  --press-ease: cubic-bezier(0.23, 1, 0.32, 1);
   overflow-x: clip;
   display: block;
   position: relative;
@@ -39,16 +41,18 @@
 }
 
 .back svg {
-  transition: transform 0.3s var(--ease-thud);
+  transition: transform 0.2s var(--ease-out);
 }
 
-.back:hover {
-  color: var(--cream);
-  background: rgba(200, 165, 87, 0.08);
-}
+@media (hover: hover) and (pointer: fine) {
+  .back:hover {
+    color: var(--cream);
+    background: rgba(200, 165, 87, 0.08);
+  }
 
-.back:hover svg {
-  transform: translateX(-3px);
+  .back:hover svg {
+    transform: translateX(-3px);
+  }
 }
 
 /* ── Intro ────────────────────────────────── */
@@ -99,11 +103,11 @@
   border: 1px solid var(--bg-line);
   border-radius: 18px;
   padding: 1.35rem 1.4rem 1.5rem;
-  animation: fade-up 0.5s var(--ease-out) both;
+  animation: fade-up 0.3s var(--ease-out) both;
 }
 
 .card + .card {
-  animation-delay: 0.06s;
+  animation-delay: 0.05s;
 }
 
 .card-heading {
@@ -165,14 +169,10 @@ input[type='text'] {
 
 .player-row {
   display: grid;
-  grid-template-columns: auto 1fr auto auto auto;
+  grid-template-columns: auto 1fr auto auto;
   align-items: center;
   gap: 0.6rem;
   padding: 0.3rem 0.75rem 0.3rem 0.55rem;
-  background: rgba(14, 10, 10, 0.45);
-  border: 1px solid var(--bg-line);
-  border-radius: 10px;
-  animation: fade-up 0.4s var(--ease-out) both;
 }
 
 .player-index {
@@ -218,7 +218,11 @@ input[type='text'] {
   border: 1px solid var(--bg-line);
   border-radius: 999px;
   cursor: pointer;
-  transition: all 0.2s var(--ease-out);
+  transition:
+    color 0.2s var(--ease-out),
+    border-color 0.2s var(--ease-out),
+    background-color 0.2s var(--ease-out),
+    transform 110ms var(--press-ease);
 }
 
 .bot-toggle::after {
@@ -227,9 +231,8 @@ input[type='text'] {
   inset: -8px -4px;
 }
 
-.bot-toggle:hover {
-  color: var(--cream);
-  border-color: var(--brass-deep);
+.bot-toggle:active {
+  transform: scale(0.97);
 }
 
 .bot-toggle:has(input:focus-visible) {
@@ -268,39 +271,34 @@ input[type='text'] {
   border-radius: 6px;
   width: 28px;
   height: 28px;
-  font-size: 0.75rem;
-  transition: all 0.2s var(--ease-out);
+  transition:
+    color 0.2s var(--ease-out),
+    border-color 0.2s var(--ease-out),
+    transform 110ms var(--press-ease);
 }
 
-.remove:hover {
-  color: var(--match-red);
-  border-color: var(--match-red);
+.remove:active {
+  transform: scale(0.97);
 }
 
-/* ── Bot panel ────────────────────────────── */
+/* ── Player card ──────────────────────────── */
 
 .player-block {
   display: flex;
   flex-direction: column;
-  gap: 0;
-  animation: fade-up 0.4s var(--ease-out) both;
-}
-
-.player-block .player-row {
-  animation: none;
+  background: rgba(14, 10, 10, 0.45);
+  border: 1px solid var(--bg-line);
+  border-radius: 12px;
+  animation: fade-up 0.3s var(--ease-out) both;
 }
 
 .bot-panel {
-  margin-top: -0.4rem;
-  padding: 0.7rem 0.9rem 0.9rem;
-  background: rgba(20, 16, 15, 0.55);
-  border: 1px solid var(--bg-line);
-  border-top: 0;
-  border-radius: 0 0 10px 10px;
+  padding: 0.8rem 0.9rem 0.95rem;
+  border-top: 1px solid var(--bg-line);
   display: flex;
   flex-direction: column;
-  gap: 0.7rem;
-  animation: fade-up 0.35s var(--ease-out);
+  gap: 0.75rem;
+  animation: fade-in 0.2s var(--ease-out) both;
 }
 
 .bot-presets {
@@ -321,7 +319,11 @@ input[type='text'] {
   border-radius: 999px;
   color: var(--ink-mute);
   cursor: pointer;
-  transition: all 0.2s var(--ease-out);
+  transition:
+    color 0.2s var(--ease-out),
+    border-color 0.2s var(--ease-out),
+    box-shadow 0.2s var(--ease-out),
+    transform 110ms var(--press-ease);
 }
 
 .preset-chip::after {
@@ -330,9 +332,8 @@ input[type='text'] {
   inset: -4px -2px;
 }
 
-.preset-chip:hover {
-  color: var(--cream);
-  border-color: var(--brass-deep);
+.preset-chip:active {
+  transform: scale(0.97);
 }
 
 .preset-chip.active {
@@ -428,11 +429,7 @@ input[type='text'] {
   border: 2px solid var(--bg-deep);
   box-shadow: 0 0 12px var(--match-red-glow);
   cursor: pointer;
-  transition: transform 0.15s var(--ease-thud);
-}
-
-.slider-field input[type='range']::-webkit-slider-thumb:hover {
-  transform: scale(1.15);
+  transition: transform 0.15s var(--ease-out);
 }
 
 .slider-field input[type='range']::-moz-range-thumb {
@@ -455,13 +452,15 @@ input[type='text'] {
   letter-spacing: 0.05em;
   text-transform: uppercase;
   font-weight: 600;
-  transition: all 0.2s var(--ease-out);
+  transition:
+    color 0.2s var(--ease-out),
+    border-color 0.2s var(--ease-out),
+    background-color 0.2s var(--ease-out),
+    transform 110ms var(--press-ease);
 }
 
-.add-player:hover {
-  color: var(--brass);
-  border-color: var(--brass);
-  background: rgba(200, 165, 87, 0.05);
+.add-player:active {
+  transform: scale(0.97);
 }
 
 /* ── Start button ─────────────────────────── */
@@ -492,7 +491,7 @@ input[type='text'] {
   gap: 1rem;
   min-height: 44px;
   padding: 1rem 1.6rem 1rem 1.8rem;
-  background: var(--match-red);
+  background: var(--action-red);
   color: var(--cream);
   border-radius: 999px;
   font-family: var(--font-display);
@@ -502,7 +501,10 @@ input[type='text'] {
   overflow: hidden;
   isolation: isolate;
   cursor: pointer;
-  transition: transform 0.25s var(--ease-thud), box-shadow 0.3s var(--ease-out);
+  transition:
+    transform 120ms var(--press-ease),
+    box-shadow 0.3s var(--ease-out),
+    background-color 0.2s var(--ease-out);
   box-shadow: 0 8px 32px -8px var(--match-red-glow), inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
 
@@ -519,17 +521,8 @@ input[type='text'] {
   transform: translateX(-160%) skewX(-24deg);
 }
 
-.start:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 14px 38px -10px var(--match-red-glow), inset 0 1px 0 rgba(255, 255, 255, 0.22);
-}
-
-.start:hover:not(:disabled)::before {
-  animation: start-shine 0.9s var(--ease-out);
-}
-
 .start:active:not(:disabled) {
-  transform: translateY(0) scale(0.98);
+  transform: scale(0.97);
   box-shadow: 0 6px 20px -8px var(--match-red-glow);
 }
 
@@ -551,11 +544,56 @@ input[type='text'] {
 
 
 .start-arrow {
-  transition: transform 0.3s var(--ease-out);
+  transition: transform 0.2s var(--ease-out);
 }
 
-.start:hover:not(:disabled) .start-arrow {
-  transform: translateX(4px);
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .bot-toggle:hover,
+  .preset-chip:hover {
+    color: var(--cream);
+    border-color: var(--brass-deep);
+  }
+
+  .preset-chip.active:hover {
+    border-color: var(--match-red);
+  }
+
+  .bot-toggle.on:hover {
+    color: var(--sage-bright);
+    border-color: var(--sage-bright);
+  }
+
+  .remove:hover {
+    color: var(--match-red);
+    border-color: var(--match-red);
+  }
+
+  .add-player:hover {
+    color: var(--brass);
+    border-color: var(--brass);
+    background: rgba(200, 165, 87, 0.05);
+  }
+
+  .slider-field input[type='range']::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+  }
+
+  .start:hover:not(:disabled) {
+    box-shadow: 0 14px 38px -10px var(--match-red-glow), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  }
+
+  .start:hover:not(:disabled)::before {
+    animation: start-shine 0.9s var(--ease-out);
+  }
+
+  .start:hover:not(:disabled) .start-arrow {
+    transform: translateX(4px);
+  }
 }
 
 .error {
@@ -585,21 +623,21 @@ input[type='text'] {
 
 @media (max-width: 480px) {
   .player-row {
-    grid-template-columns: auto 1fr auto auto;
+    grid-template-columns: auto 1fr auto;
     grid-template-areas:
-      "idx name name name"
-      ". . bot remove";
-    row-gap: 0.25rem;
-    padding-bottom: 0.5rem;
+      "idx name name"
+      ". bot remove";
+    row-gap: 0.35rem;
+    padding-bottom: 0.6rem;
   }
   .player-row:not(:has(.bot-toggle, .remove)) {
-    grid-template-areas: "idx name name name";
+    grid-template-areas: "idx name name";
     padding-bottom: 0.3rem;
   }
   .player-index { grid-area: idx; }
   .player-name { grid-area: name; }
-  .bot-toggle { grid-area: bot; }
-  .remove { grid-area: remove; }
+  .bot-toggle { grid-area: bot; justify-self: start; }
+  .remove { grid-area: remove; justify-self: end; }
 }
 
 @media (pointer: coarse) {
@@ -625,18 +663,21 @@ input[type='text'] {
 
 @media (prefers-reduced-motion: reduce) {
   .card,
-  .player-row,
   .player-block,
   .bot-panel {
-    animation: none;
+    animation-name: fade-in;
   }
   .start:hover:not(:disabled)::before {
     animation: none;
   }
-  .start:hover:not(:disabled),
   .start:hover:not(:disabled) .start-arrow,
   .back:hover svg,
-  .slider-field input[type='range']::-webkit-slider-thumb:hover {
+  .slider-field input[type='range']::-webkit-slider-thumb:hover,
+  .start:active:not(:disabled),
+  .bot-toggle:active,
+  .preset-chip:active,
+  .remove:active,
+  .add-player:active {
     transform: none;
   }
 }

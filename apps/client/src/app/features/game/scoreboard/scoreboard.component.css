@@ -10,7 +10,9 @@
   padding: 0.8rem 1.2rem;
   margin: 0 0 1rem;
   border: 1px solid var(--bg-line);
-  background: linear-gradient(180deg, rgba(36, 30, 28, 0.7), rgba(20, 16, 15, 0.6));
+  background:
+    radial-gradient(ellipse 70% 120% at 50% 0%, rgba(210, 32, 45, 0.12), transparent 70%),
+    linear-gradient(180deg, rgba(36, 30, 28, 0.7), rgba(20, 16, 15, 0.6));
   border-radius: 10px;
   position: relative;
   overflow: hidden;
@@ -19,9 +21,10 @@
 .round-banner::before {
   content: '';
   position: absolute;
-  top: 0; left: 0; bottom: 0;
-  width: 4px;
-  background: var(--match-red);
+  top: 0; left: 12%; right: 12%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--match-red), transparent);
+  pointer-events: none;
 }
 
 .round-banner-label {
@@ -109,14 +112,16 @@
 
 .player-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 0.6rem;
+  gap: 0.35rem 0.6rem;
   margin-bottom: 0.6rem;
 }
 
 .player-id {
   display: flex;
+  flex: 1 1 9rem;
   flex-direction: column;
   gap: 0.1rem;
   min-width: 0;
@@ -143,8 +148,10 @@
 
 .player-badges {
   display: flex;
+  flex: 0 1 auto;
   flex-wrap: wrap;
   gap: 0.3rem;
+  min-width: 0;
 }
 
 .badge {
@@ -161,9 +168,21 @@
 }
 
 .badge.bot {
-  color: var(--sage-bright);
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0 0.4em;
+  max-width: 100%;
+  white-space: normal;
+  color: #8fb58f;
   border-color: var(--sage);
   background: rgba(61, 90, 61, 0.16);
+}
+
+.bot-detail {
+  letter-spacing: 0.08em;
+  text-transform: none;
+  font-weight: 600;
+  color: var(--cream-dim);
 }
 
 .badge.num {
@@ -214,15 +233,17 @@
   position: absolute;
   left: 0;
   top: 50%;
+  width: 1.1rem;
+  height: 1.1rem;
   transform: translateY(-50%);
-  color: var(--match-red);
-  font-size: 1.3rem;
-  animation: aim-blink 1.6s ease-in-out infinite;
+  fill: var(--match-red);
+  filter: drop-shadow(0 1px 4px rgba(210, 32, 45, 0.45));
+  animation: aim-in 150ms cubic-bezier(0.23, 1, 0.32, 1) both;
 }
 
-@keyframes aim-blink {
-  0%, 100% { opacity: 0.6; transform: translate(0, -50%); }
-  50% { opacity: 1; transform: translate(3px, -50%); }
+@keyframes aim-in {
+  from { opacity: 0; transform: translate(-6px, -50%); }
+  to { opacity: 1; transform: translate(0, -50%); }
 }
 
 .score {
@@ -313,7 +334,7 @@
   justify-content: space-between;
   padding: 0.18rem 0.5rem;
   border-radius: 5px;
-  transition: background 0.3s var(--ease-out);
+  transition: background-color 150ms ease;
 }
 
 .cricket-row.closed {
@@ -332,32 +353,29 @@
   color: var(--sage-bright);
 }
 
-.cricket-pips {
-  display: flex;
-  gap: 0.3rem;
+.cricket-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
 }
 
-.pip {
-  display: inline-block;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  border: 1px solid var(--bg-line);
-  background: transparent;
-  position: relative;
-  transition: all 0.25s var(--ease-thud);
+.chalk {
+  display: block;
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: none;
+  stroke: var(--cream);
+  stroke-width: 2;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 3px rgba(241, 232, 211, 0.25));
+  transition: stroke 150ms ease, filter 150ms ease;
 }
 
-.pip.lit {
-  background: var(--cream);
-  border-color: var(--cream);
-  box-shadow: 0 0 6px rgba(241, 232, 211, 0.4);
-}
-
-.cricket-row.closed .pip.lit {
-  background: var(--sage-bright);
-  border-color: var(--sage-bright);
-  box-shadow: 0 0 6px var(--sage-bright);
+.chalk.closed {
+  stroke: #8fb58f;
+  filter: drop-shadow(0 0 3px rgba(107, 142, 107, 0.45));
 }
 
 /* ── Current-turn throws strip ────────────── */
@@ -382,13 +400,12 @@
   border: 1px solid var(--bg-line);
   border-radius: 8px;
   font-family: var(--font-numeric);
-  animation: throw-land 0.38s var(--ease-thud);
+  animation: throw-land 180ms cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 @keyframes throw-land {
-  0% { transform: scale(1.18); opacity: 0; }
-  55% { transform: scale(0.95); opacity: 1; }
-  100% { transform: scale(1); }
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
 
 .throw-mult {
@@ -396,11 +413,11 @@
 }
 
 .throw-mult.double {
-  color: var(--double);
+  color: #8fb58f;
 }
 
 .throw-mult.treble {
-  color: var(--treble);
+  color: #ff8a8f;
 }
 
 .throw.double {
@@ -545,11 +562,8 @@
   align-items: stretch;
   justify-content: center;
   gap: 0.3rem;
-  margin: 0.5rem 0 0.6rem;
-  padding: 0.4rem 0.5rem;
-  background: rgba(20, 16, 15, 0.55);
-  border: 1px dashed var(--bg-line);
-  border-radius: 8px;
+  margin: 0.4rem 0 0.5rem;
+  padding: 0.2rem 0;
 }
 
 .stat-chip {
@@ -681,10 +695,9 @@
 .cricket-grid {
   display: none;
   width: 100%;
-  margin-top: 0.6rem;
   border-collapse: separate;
-  border-spacing: 0 0.15rem;
-  padding: 0.4rem 0.5rem 0.5rem;
+  border-spacing: 0 2px;
+  padding: 0.3rem 0.5rem 0.45rem;
   background: linear-gradient(180deg, rgba(36, 30, 28, 0.7), rgba(20, 16, 15, 0.7));
   border: 1px solid var(--bg-line);
   border-radius: 14px;
@@ -692,19 +705,37 @@
 }
 
 .cricket-grid thead th {
-  padding: 0.2rem 0.3rem 0.35rem;
-  font-family: var(--font-display);
-  font-size: 1rem;
+  padding: 0.25rem 0.3rem 0.35rem;
   font-weight: 400;
-  letter-spacing: 0.04em;
   color: var(--ink-mute);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  text-align: center;
+  vertical-align: bottom;
+  transition: color 150ms ease, box-shadow 150ms ease;
 }
 
 .cricket-grid thead th:first-child {
   width: 2.4rem;
+}
+
+.grid-name {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.grid-points {
+  display: block;
+  margin-top: 0.15rem;
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  color: var(--cream-dim);
 }
 
 .cricket-grid thead th.active {
@@ -712,21 +743,33 @@
   box-shadow: inset 0 -2px 0 var(--match-red);
 }
 
+.cricket-grid thead th.active .grid-points {
+  color: #fff;
+  text-shadow: 0 0 18px rgba(241, 232, 211, 0.25);
+}
+
 .cricket-grid tbody th {
+  height: 28px;
   font-family: var(--font-display);
   font-size: 1.1rem;
   font-weight: 400;
   letter-spacing: 0.04em;
   color: var(--ink-mute);
   text-align: left;
-  padding: 0.15rem 0.4rem;
+  padding: 0 0.4rem;
 }
 
 .cricket-grid td {
+  height: 28px;
   text-align: center;
-  padding: 0.2rem 0.3rem;
+  padding: 0 0.3rem;
   border-radius: 5px;
-  transition: background 0.3s var(--ease-out);
+  transition: background-color 150ms ease;
+}
+
+.cricket-grid td .chalk {
+  display: inline-block;
+  vertical-align: middle;
 }
 
 .cricket-grid td.active {
@@ -737,19 +780,15 @@
   background: rgba(61, 90, 61, 0.18);
 }
 
-.cricket-grid td .cricket-pips {
-  justify-content: center;
-}
-
-.cricket-grid td.closed .pip.lit {
-  background: var(--sage-bright);
-  border-color: var(--sage-bright);
-  box-shadow: 0 0 6px var(--sage-bright);
-}
-
 .cricket-grid tr.dead th,
 .cricket-grid tr.dead td {
   opacity: 0.45;
+}
+
+.cricket-grid tr.dead th {
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+  text-decoration-color: var(--ink-mute);
 }
 
 .visually-hidden {
@@ -763,8 +802,10 @@
 
 @media (max-width: 640px) {
   .cricket-grid { display: table; }
-  .player .cricket-marks { display: none; }
-  .checkout-slot { min-height: 4.2rem; margin: 0 0 0.4rem; }
+  .scoreboard.is-cricket { display: none; }
+  .checkout-slot { min-height: 2.5rem; margin: 0 0 0.35rem; }
+  .checkout { flex-direction: row; justify-content: center; gap: 0.6rem; padding: 0.35rem 0.6rem; }
+  .player .throws { display: none; }
 
   .scoreboard { grid-template-columns: 1fr; gap: 0.6rem; }
 
@@ -774,13 +815,31 @@
   .player { padding: 0.8rem 0.9rem; }
   .player-head { margin-bottom: 0.3rem; }
   .player-name { font-size: 1.3rem; }
-  .score { font-size: clamp(3.4rem, 17vw, 4.5rem); }
   .score-block { margin: 0.1rem 0 0.5rem; }
   .hero-121 { margin: 0.1rem 0 0.5rem; }
-  .score { font-size: 3.6rem; }
-  .meta-row { margin-bottom: 0.35rem; }
-  .stat { padding: 0.2rem 0.5rem; }
-  .stat-strip { margin: 0.35rem 0; padding: 0.25rem 0.4rem; }
+
+  .meta-row { justify-content: flex-start; gap: 0; margin: 0; }
+  .stat {
+    flex: none;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 0.35rem;
+    padding: 0;
+    background: none;
+    border: 0;
+  }
+  .stat + .stat::before {
+    content: '·';
+    margin: 0 0.5rem;
+    color: var(--ink-faint);
+  }
+  .stat-val { font-size: 1.15rem; margin: 0; }
+
+  .stat-strip { margin: 0.25rem 0 0.35rem; padding: 0; }
+  .stat-strip .first9 { display: none; }
+  .stat-chip .chip-num { font-size: 1.05rem; }
+  .stat-chip .chip-label { margin-top: 0.1rem; }
+
   .throws { margin-top: 0.3rem; padding-top: 0.45rem; }
   .throw { min-height: 2.5rem; padding: 0.2rem; }
 
@@ -810,21 +869,30 @@
 
   .player.active {
     display: grid;
-    grid-template-columns: 1fr auto;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'head score'
+      'meta score';
     align-items: center;
     column-gap: 0.75rem;
   }
 
-  .player.active > :not(.player-head):not(.score-block) { grid-column: 1 / -1; }
-  .player.active .player-head,
-  .player.active .score-block { margin: 0; }
-  .player.active .score { font-size: 2.8rem; }
+  .player.active > * { grid-column: 1 / -1; }
+  .player.active .player-head { grid-area: head; margin: 0; align-self: end; }
+  .player.active .meta-row { grid-area: meta; align-self: start; margin-top: 0.3rem; }
+  .player.active .score-block { grid-area: score; margin: 0 0 0.6rem; padding-left: 1.5rem; }
+  .player.active .score { font-size: 4.75rem; }
 
   .player:not(.active) .player-name { font-size: 1.15rem; }
   .player:not(.active) .badge.bot { display: none; }
 
   .player:not(.active) .score-block { margin: 0; flex-shrink: 0; }
   .player:not(.active) .score { font-size: 1.9rem; text-shadow: none; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -834,19 +902,11 @@
   .throw,
   .checkout,
   .badge.last-turn {
-    animation: none;
+    animation: fade-in 150ms ease both;
   }
 
   .player.border-beam::before {
     animation: none;
     --beam-angle: 300deg;
-  }
-
-  .player,
-  .score,
-  .cricket-row,
-  .cricket-grid td,
-  .pip {
-    transition: none;
   }
 }

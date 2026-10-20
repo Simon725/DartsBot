@@ -22,21 +22,19 @@
 
 .head { margin-bottom: 0.75rem; }
 
-.eyebrow {
-  font-size: 0.75rem;
-  letter-spacing: 0.28em;
-  text-transform: uppercase;
-  color: var(--brass);
-  font-weight: 700;
-}
-
 .title {
-  margin: 0.15rem 0 0;
+  margin: 0;
   font-family: var(--font-display);
   font-size: 1.7rem;
   letter-spacing: 0.03em;
   color: var(--cream);
   line-height: 1;
+}
+
+.sub {
+  margin: 0.3rem 0 0;
+  font-size: 0.8rem;
+  color: var(--ink-mute);
 }
 
 .table-wrap { overflow-x: auto; }
@@ -114,10 +112,14 @@ tfoot th, tfoot td {
 
 tfoot .avg { color: var(--brass); font-size: 1.55rem; }
 
+@keyframes fade-in {
+  from { opacity: 0; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .leg-history,
   tbody tr {
-    animation: none;
-    transition: none;
+    animation-name: fade-in;
+    animation-duration: 200ms;
   }
 }

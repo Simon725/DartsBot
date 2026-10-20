@@ -29,6 +29,7 @@ export interface LegWonSummary {
   legNumber: number;
   darts: number;
   average: number | null;
+  checkout: Throw | null;
 }
 
 export interface SavedGameSummary {
@@ -138,7 +139,7 @@ export class GameStateService {
       this.lastTurn.set(summarizeTurn(this.turnStartFor(before), before, result, player, input));
     }
     this.commit(result.state);
-    if (!result.gameWon) this.legWon.set(detectLegWon(before, result.state) ?? this.legWon());
+    if (!result.gameWon) this.legWon.set(detectLegWon(before, result.state, input) ?? this.legWon());
     if (result.gameWon) this.finish(result.state);
   }
 
@@ -252,7 +253,7 @@ function pointsGained(before: GameState, after: GameState, playerId: string): nu
   return start === null || end === null ? null : end - start;
 }
 
-function detectLegWon(before: GameState, after: GameState): LegWonSummary | null {
+function detectLegWon(before: GameState, after: GameState, input: Throw[] | number): LegWonSummary | null {
   if (before.modeState.mode !== 'x01' || after.modeState.mode !== 'x01') return null;
   const legs = after.modeState.completedLegs;
   if (legs.length <= before.modeState.completedLegs.length) return null;
@@ -266,6 +267,7 @@ function detectLegWon(before: GameState, after: GameState): LegWonSummary | null
     legNumber: legs.length,
     darts,
     average: darts > 0 ? (scored / darts) * 3 : null,
+    checkout: typeof input === 'number' ? null : (input.at(-1) ?? null),
   };
 }
 

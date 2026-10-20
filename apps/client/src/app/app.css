@@ -28,8 +28,14 @@
   transition: color 0.3s var(--ease-out);
 }
 
-.brand:hover {
-  color: var(--cream);
+@media (hover: hover) and (pointer: fine) {
+  .brand:hover {
+    color: var(--cream);
+  }
+
+  .brand:hover .brand-mark {
+    transform: rotate(20deg);
+  }
 }
 
 .brand-mark {
@@ -37,10 +43,6 @@
   display: grid;
   place-items: center;
   transition: transform 0.5s var(--ease-thud);
-}
-
-.brand:hover .brand-mark {
-  transform: rotate(20deg);
 }
 
 .brand-text {
@@ -52,13 +54,13 @@
 .brand-name {
   font-family: var(--font-display);
   font-size: 1.4rem;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
 }
 
 .brand-sub {
-  font-size: 0.65rem;
+  font-size: 0.7rem;
   color: var(--ink-faint);
-  letter-spacing: 0.22em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   margin-top: 0.2rem;
 }
@@ -66,5 +68,9 @@
 @media (max-width: 640px) {
   .app-shell-top {
     padding: 0.8rem 1rem;
+  }
+
+  :host(.on-game-route) .app-shell-top {
+    display: none;
   }
 }

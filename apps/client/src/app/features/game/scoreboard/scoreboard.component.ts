@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { Component, effect, inject, input, signal, untracked } from '@angular/core';
 import {
   getCheckout,
@@ -5,6 +6,7 @@ import {
   x01MatchTotals,
   type CheckoutSuggestion,
   type CricketNumber,
+  type DartsLeft,
   type GameState,
 } from '@darts/shared';
 import { GameStateService, type TurnSummary } from '../../../core/game-state.service';
@@ -21,7 +23,7 @@ interface LastTurnsByGame {
 @Component({
   selector: 'app-scoreboard',
   standalone: true,
-  imports: [RollingNumberComponent, SpotlightDirective],
+  imports: [NgTemplateOutlet, RollingNumberComponent, SpotlightDirective],
   templateUrl: './scoreboard.component.html',
   styleUrl: './scoreboard.component.css',
 })
@@ -227,18 +229,48 @@ export class ScoreboardComponent {
    * (All table routes finish on a double, which is also a legal master finish.)
    */
   checkoutFor(state: GameState, playerId: string): CheckoutSuggestion | null {
+    const remaining = this.checkoutRemaining(state, playerId);
+    const dartsLeft = this.dartsLeftInVisit(state);
+    if (remaining === null || dartsLeft === null) return null;
+    return getCheckout(remaining, dartsLeft);
+  }
+
+  /** Darts left this visit when the remaining score is in range but cannot be finished with them. */
+  noFinishDartsLeft(state: GameState, playerId: string): number | null {
+    const dartsLeft = this.dartsLeftInVisit(state);
+    if (dartsLeft === null || dartsLeft === 3) return null;
+    if (this.checkoutRemaining(state, playerId) === null) return null;
+    return this.checkoutFor(state, playerId) ? null : dartsLeft;
+  }
+
+  private dartsLeftInVisit(state: GameState): DartsLeft | null {
+    const dartsLeft = 3 - state.currentThrows.length;
+    if (dartsLeft < 1) return null;
+    return dartsLeft as DartsLeft;
+  }
+
+  private checkoutRemaining(state: GameState, playerId: string): number | null {
+    const remaining = this.finishTarget(state, playerId);
+    if (remaining === null || remaining > MAX_CHECKOUT || remaining < 2) return null;
+    return remaining;
+  }
+
+  private finishTarget(state: GameState, playerId: string): number | null {
     const ms = state.modeState;
-    let remaining: number;
     if (ms.mode === 'x01') {
       if (state.config.mode !== 'x01' || state.config.outMode === 'straight') return null;
-      remaining = ms.scores[playerId] ?? 0;
-    } else if (ms.mode === '121') {
-      if (playerId !== ms.playerId) return null;
-      remaining = ms.remaining;
-    } else {
-      return null;
+      return ms.scores[playerId] ?? 0;
     }
-    if (remaining > 170 || remaining < 2) return null;
-    return getCheckout(remaining);
+    if (ms.mode === '121') return playerId === ms.playerId ? ms.remaining : null;
+    return null;
+  }
+
+  cricketPoints(state: GameState, playerId: string): number {
+    return state.modeState.mode === 'cricket' ? (state.modeState.points[playerId] ?? 0) : 0;
+  }
+
+  cricketMarkLabel(playerName: string, count: number): string {
+    if (count >= 3) return `${playerName}: closed`;
+    return `${playerName}: ${count} of 3`;
   }
 }

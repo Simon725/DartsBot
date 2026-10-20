@@ -59,11 +59,27 @@ describe('GameStateService', () => {
     service.throwTurn(gameId, 'p2', 0);
     throwDarts('p1', [dart(20, 2)]);
 
-    expect(service.legWon()).toMatchObject({ winnerId: 'p1', winnerName: 'Alice', legNumber: 1, darts: 7 });
+    expect(service.legWon()).toMatchObject({
+      winnerId: 'p1',
+      winnerName: 'Alice',
+      legNumber: 1,
+      darts: 7,
+      checkout: dart(20, 2),
+    });
     expect(service.lastTurn()).toMatchObject({ playerId: 'p1', scored: 40 });
 
     service.dismissLegWon();
     expect(service.legWon()).toBeNull();
+  });
+
+  it('reports no checkout dart when the leg is finished by a turn total', () => {
+    service.throwTurn(gameId, 'p1', 180);
+    service.throwTurn(gameId, 'p2', 0);
+    service.throwTurn(gameId, 'p1', 81);
+    service.throwTurn(gameId, 'p2', 0);
+    service.throwTurn(gameId, 'p1', 40, 1);
+
+    expect(service.legWon()).toMatchObject({ winnerId: 'p1', checkout: null });
   });
 
   it('reports cricket points scored over the whole turn', () => {

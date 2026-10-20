@@ -10,8 +10,12 @@ interface LegCell {
 
 interface LegRow {
   number: number;
+  delayMs: number;
   cells: LegCell[];
 }
+
+const STAGGER_STEP_MS = 40;
+const STAGGERED_ROWS = 5;
 
 @Component({
   selector: 'app-leg-history',
@@ -30,6 +34,7 @@ export class LegHistoryComponent {
     if (state.modeState.mode !== 'x01') return [];
     return state.modeState.completedLegs.map((leg, index) => ({
       number: index + 1,
+      delayMs: Math.min(index, STAGGERED_ROWS - 1) * STAGGER_STEP_MS,
       cells: state.players.map((player) => {
         const totals = x01LegTotals(leg, player.id);
         return {
