@@ -33,11 +33,16 @@
   color: var(--cream);
 }
 
-.board-wrap {
+.board-stage {
   grid-area: board;
+  position: relative;
   width: var(--board-size);
   margin: 0 auto;
+}
+
+.board-wrap {
   border-radius: 50%;
+  overflow: hidden;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 0 1px var(--bg-line);
   transition: box-shadow 0.3s var(--ease-out);
 }
@@ -56,6 +61,50 @@
 
 .board-wrap.aiming .board {
   cursor: crosshair;
+}
+
+.board path,
+.board circle:not(.dart circle),
+.wire {
+  vector-effect: non-scaling-stroke;
+}
+
+.zoom-controls {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.zoom-button {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  color: var(--cream);
+  background: rgba(28, 23, 21, 0.72);
+  border: 1px solid var(--bg-line);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: transform 140ms var(--press-ease), opacity 140ms ease, border-color 140ms ease;
+}
+
+.zoom-button:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+.zoom-button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .zoom-button:hover:not(:disabled) {
+    border-color: var(--brass);
+  }
 }
 
 .surround {
@@ -297,7 +346,8 @@
   .dart-halo {
     animation: none !important;
   }
-  .primary:active:not(:disabled) {
+  .primary:active:not(:disabled),
+  .zoom-button:active:not(:disabled) {
     transform: none;
   }
 }

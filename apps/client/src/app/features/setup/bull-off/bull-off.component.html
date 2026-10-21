@@ -21,45 +21,68 @@
     </p>
   </header>
 
-  <div class="board-wrap" [class.aiming]="isHumanTurn()">
-    <svg
-      class="board"
-      viewBox="-215 -215 430 430"
-      role="img"
-      aria-label="Dartboard"
-      (pointerdown)="startAiming($event)"
-      (pointermove)="moveAim($event)"
-      (pointerup)="stopAiming()"
-      (pointercancel)="stopAiming()"
-    >
-      <circle class="surround" r="212" />
-      @for (segment of segments; track segment.number) {
-        <path [attr.d]="segment.innerSingle" [class]="segment.isDark ? 'single-dark' : 'single-light'" />
-        <path [attr.d]="segment.treble" [class]="segment.isDark ? 'ring-red' : 'ring-green'" />
-        <path [attr.d]="segment.outerSingle" [class]="segment.isDark ? 'single-dark' : 'single-light'" />
-        <path [attr.d]="segment.double" [class]="segment.isDark ? 'ring-red' : 'ring-green'" />
-        <text class="number" [attr.x]="segment.label.x" [attr.y]="segment.label.y">{{ segment.number }}</text>
-      }
-      <circle class="ring-green" [attr.r]="BULL_OUTER_R" />
-      <circle class="ring-red" [attr.r]="BULL_INNER_R" />
-      <circle class="wire" [attr.r]="DOUBLE_OUTER_R" />
+  <div class="board-stage">
+    <div class="board-wrap" [class.aiming]="isHumanTurn()">
+      <svg
+        class="board"
+        [attr.viewBox]="viewBox()"
+        role="img"
+        aria-label="Dartboard"
+        (pointerdown)="onPointerDown($event)"
+        (pointermove)="onPointerMove($event)"
+        (pointerup)="onPointerUp($event)"
+        (pointercancel)="onPointerUp($event)"
+        (wheel)="onWheel($event)"
+      >
+        <circle class="surround" r="212" />
+        @for (segment of segments; track segment.number) {
+          <path [attr.d]="segment.innerSingle" [class]="segment.isDark ? 'single-dark' : 'single-light'" />
+          <path [attr.d]="segment.treble" [class]="segment.isDark ? 'ring-red' : 'ring-green'" />
+          <path [attr.d]="segment.outerSingle" [class]="segment.isDark ? 'single-dark' : 'single-light'" />
+          <path [attr.d]="segment.double" [class]="segment.isDark ? 'ring-red' : 'ring-green'" />
+          <text class="number" [attr.x]="segment.label.x" [attr.y]="segment.label.y">{{ segment.number }}</text>
+        }
+        <circle class="ring-green" [attr.r]="BULL_OUTER_R" />
+        <circle class="ring-red" [attr.r]="BULL_INNER_R" />
+        <circle class="wire" [attr.r]="DOUBLE_OUTER_R" />
 
-      @for (standing of standings(); track standing.playerIndex) {
-        @if (standing.point; as point) {
-          <g class="dart" [class.leader]="standing.isLeader && outcome()" [attr.transform]="'translate(' + point.x + ' ' + point.y + ')'">
-            <circle class="dart-halo" r="9" [attr.fill]="standing.color" />
-            <circle class="dart-tip" r="3.2" [attr.fill]="standing.color" />
+        @for (standing of standings(); track standing.playerIndex) {
+          @if (standing.point; as point) {
+            <g class="dart" [class.leader]="standing.isLeader && outcome()" [attr.transform]="markerTransform(point)">
+              <circle class="dart-halo" r="9" [attr.fill]="standing.color" />
+              <circle class="dart-tip" r="3.2" [attr.fill]="standing.color" />
+            </g>
+          }
+        }
+
+        @if (pending(); as point) {
+          <g class="dart pending" [attr.transform]="markerTransform(point)">
+            <circle class="crosshair" r="12" [attr.stroke]="pendingColor()" />
+            <circle class="dart-tip" r="3.2" [attr.fill]="pendingColor()" />
           </g>
         }
-      }
+      </svg>
+    </div>
 
-      @if (pending(); as point) {
-        <g class="dart pending" [attr.transform]="'translate(' + point.x + ' ' + point.y + ')'">
-          <circle class="crosshair" r="12" [attr.stroke]="pendingColor()" />
-          <circle class="dart-tip" r="3.2" [attr.fill]="pendingColor()" />
-        </g>
+    <div class="zoom-controls" role="group" aria-label="Board zoom">
+      @if (isZoomed()) {
+        <button type="button" class="zoom-button" (click)="resetZoom()" aria-label="Show whole board">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </button>
       }
-    </svg>
+      <button type="button" class="zoom-button" (click)="zoomIn()" [disabled]="!canZoomIn()" aria-label="Zoom in">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+        </svg>
+      </button>
+      <button type="button" class="zoom-button" (click)="zoomOut()" [disabled]="!isZoomed()" aria-label="Zoom out">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <path d="M5 12h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+        </svg>
+      </button>
+    </div>
   </div>
 
   <ol class="standings">

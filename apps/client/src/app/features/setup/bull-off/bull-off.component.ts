@@ -1,4 +1,4 @@
-import { Component, computed, effect, input, output, signal } from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, input, output, signal } from '@angular/core';
 import {
   BULL_INNER_R,
   BULL_OUTER_R,
@@ -26,10 +26,32 @@ interface Standing {
   isLeader: boolean;
 }
 
+interface BoardView {
+  x: number;
+  y: number;
+  size: number;
+}
+
+interface ClientPoint {
+  x: number;
+  y: number;
+}
+
+interface PinchStart {
+  anchor: BoardPoint;
+  distance: number;
+  size: number;
+}
+
 type BullOffOutcome = { kind: 'winner'; playerIndex: number } | { kind: 'tie'; playerIndices: number[] };
 
 const BOT_THROW_DELAY_MS = 1100;
 const NUMBER_RING_R = 192;
+const FULL_VIEW: BoardView = { x: -215, y: -215, size: 430 };
+const MAX_ZOOM = 8;
+const ZOOM_STEP = 2;
+const ZOOM_ANIMATION_MS = 260;
+const WHEEL_ZOOM_SPEED = 0.002;
 const PLAYER_COLORS = ['#f1e8d3', '#6fb7ff', '#ffb347', '#c39bff', '#7ee0b0', '#ff7aa8', '#ffe066', '#9ad1d4'];
 
 function pointOnBoard(radius: number, degreesFromTop: number): BoardPoint {
@@ -78,6 +100,36 @@ function describeThrow(point: BoardPoint): string {
   return `${ringName(distance)} ${segmentAt(point)} · ${millimetres}`;
 }
 
+function clampView(view: BoardView): BoardView {
+  const size = Math.min(FULL_VIEW.size, Math.max(FULL_VIEW.size / MAX_ZOOM, view.size));
+  const maxOffset = FULL_VIEW.x + FULL_VIEW.size - size;
+  return {
+    size,
+    x: Math.min(maxOffset, Math.max(FULL_VIEW.x, view.x)),
+    y: Math.min(maxOffset, Math.max(FULL_VIEW.y, view.y)),
+  };
+}
+
+function viewAround(center: BoardPoint, size: number): BoardView {
+  return clampView({ x: center.x - size / 2, y: center.y - size / 2, size });
+}
+
+function easeOutQuart(progress: number): number {
+  return 1 - (1 - progress) ** 4;
+}
+
+function prefersReducedMotion(): boolean {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+function midpoint(a: ClientPoint, b: ClientPoint): ClientPoint {
+  return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+}
+
+function distanceBetween(a: ClientPoint, b: ClientPoint): number {
+  return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
 function isTie(a: number, b: number): boolean {
   return a === b || (bullRing(a) !== null && bullRing(a) === bullRing(b));
 }
@@ -117,6 +169,19 @@ export class BullOffComponent {
   private readonly throws = signal<Record<number, BoardPoint>>({});
   readonly pending = signal<BoardPoint | null>(null);
   private aiming = false;
+  private pendingBeforeAim: BoardPoint | null = null;
+  private readonly activePointers = new Map<number, ClientPoint>();
+  private pinch: PinchStart | null = null;
+  private zoomFrame: number | undefined;
+
+  readonly view = signal<BoardView>(FULL_VIEW);
+  readonly viewBox = computed(() => {
+    const { x, y, size } = this.view();
+    return `${x} ${y} ${size} ${size}`;
+  });
+  readonly markerScale = computed(() => this.view().size / FULL_VIEW.size);
+  readonly isZoomed = computed(() => this.view().size < FULL_VIEW.size - 0.01);
+  readonly canZoomIn = computed(() => this.view().size > FULL_VIEW.size / MAX_ZOOM + 0.01);
 
   readonly activeContenders = computed(() => this.contenders() ?? this.players().map((_, index) => index));
 
@@ -176,6 +241,7 @@ export class BullOffComponent {
   });
 
   constructor() {
+    inject(DestroyRef).onDestroy(() => this.stopZoomAnimation());
     effect((onCleanup) => {
       const index = this.turnIndex();
       const player = this.currentPlayer();
@@ -189,19 +255,62 @@ export class BullOffComponent {
     return PLAYER_COLORS[playerIndex % PLAYER_COLORS.length]!;
   }
 
-  startAiming(event: PointerEvent): void {
-    if (!this.isHumanTurn()) return;
-    this.aiming = true;
+  markerTransform(point: BoardPoint): string {
+    return `translate(${point.x} ${point.y}) scale(${this.markerScale()})`;
+  }
+
+  onPointerDown(event: PointerEvent): void {
+    this.stopZoomAnimation();
     (event.currentTarget as Element).setPointerCapture(event.pointerId);
+    this.activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+
+    if (this.activePointers.size === 2) {
+      this.startPinch(event);
+      return;
+    }
+    if (this.activePointers.size > 1 || !this.isHumanTurn()) return;
+    this.aiming = true;
+    this.pendingBeforeAim = this.pending();
     this.aimAt(event);
   }
 
-  moveAim(event: PointerEvent): void {
+  onPointerMove(event: PointerEvent): void {
+    if (!this.activePointers.has(event.pointerId)) return;
+    this.activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (this.pinch) {
+      this.updatePinch(event);
+      return;
+    }
     if (this.aiming) this.aimAt(event);
   }
 
-  stopAiming(): void {
-    this.aiming = false;
+  onPointerUp(event: PointerEvent): void {
+    this.activePointers.delete(event.pointerId);
+    if (this.activePointers.size < 2) this.pinch = null;
+    if (this.activePointers.size === 0) this.aiming = false;
+  }
+
+  onWheel(event: WheelEvent): void {
+    const zoomingOut = event.deltaY > 0;
+    if (zoomingOut && !this.isZoomed()) return;
+    event.preventDefault();
+    this.stopZoomAnimation();
+    const lineHeight = event.deltaMode === WheelEvent.DOM_DELTA_LINE ? 16 : 1;
+    const factor = Math.exp(event.deltaY * lineHeight * WHEEL_ZOOM_SPEED);
+    const svg = event.currentTarget as SVGSVGElement;
+    this.zoomAround(svg, { x: event.clientX, y: event.clientY }, this.view().size * factor);
+  }
+
+  zoomIn(): void {
+    this.animateViewTo(viewAround(this.zoomFocus(), this.view().size / ZOOM_STEP));
+  }
+
+  zoomOut(): void {
+    this.animateViewTo(viewAround(this.zoomFocus(), this.view().size * ZOOM_STEP));
+  }
+
+  resetZoom(): void {
+    this.animateViewTo(FULL_VIEW);
   }
 
   confirmThrow(): void {
@@ -229,11 +338,81 @@ export class BullOffComponent {
   }
 
   private aimAt(event: PointerEvent): void {
-    const svg = (event.currentTarget as SVGGraphicsElement).ownerSVGElement ?? (event.currentTarget as SVGSVGElement);
+    const point = this.toBoardPoint(event.currentTarget as SVGSVGElement, { x: event.clientX, y: event.clientY });
+    if (point) this.pending.set(point);
+  }
+
+  private startPinch(event: PointerEvent): void {
+    if (this.aiming) {
+      this.aiming = false;
+      this.pending.set(this.pendingBeforeAim);
+    }
+    const [first, second] = [...this.activePointers.values()] as [ClientPoint, ClientPoint];
+    const anchor = this.toBoardPoint(event.currentTarget as SVGSVGElement, midpoint(first, second));
+    if (!anchor) return;
+    this.pinch = { anchor, distance: distanceBetween(first, second), size: this.view().size };
+  }
+
+  private updatePinch(event: PointerEvent): void {
+    const pinch = this.pinch!;
+    const [first, second] = [...this.activePointers.values()] as [ClientPoint, ClientPoint];
+    const size = (pinch.size * pinch.distance) / Math.max(1, distanceBetween(first, second));
+    this.placeAnchor(event.currentTarget as SVGSVGElement, pinch.anchor, midpoint(first, second), size);
+  }
+
+  private zoomAround(svg: SVGSVGElement, client: ClientPoint, size: number): void {
+    const anchor = this.toBoardPoint(svg, client);
+    if (anchor) this.placeAnchor(svg, anchor, client, size);
+  }
+
+  private placeAnchor(svg: SVGSVGElement, anchor: BoardPoint, client: ClientPoint, size: number): void {
+    const rect = svg.getBoundingClientRect();
+    const clampedSize = clampView({ ...this.view(), size }).size;
+    const fractionX = (client.x - rect.left) / rect.width;
+    const fractionY = (client.y - rect.top) / rect.height;
+    this.view.set(
+      clampView({ x: anchor.x - fractionX * clampedSize, y: anchor.y - fractionY * clampedSize, size: clampedSize }),
+    );
+  }
+
+  private toBoardPoint(svg: SVGSVGElement, client: ClientPoint): BoardPoint | null {
     const matrix = svg.getScreenCTM();
-    if (!matrix) return;
-    const point = new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse());
-    this.pending.set({ x: point.x, y: point.y });
+    if (!matrix) return null;
+    const point = new DOMPoint(client.x, client.y).matrixTransform(matrix.inverse());
+    return { x: point.x, y: point.y };
+  }
+
+  private zoomFocus(): BoardPoint {
+    const pending = this.pending();
+    if (pending) return pending;
+    if (!this.isZoomed()) return { x: 0, y: 0 };
+    const { x, y, size } = this.view();
+    return { x: x + size / 2, y: y + size / 2 };
+  }
+
+  private animateViewTo(target: BoardView): void {
+    this.stopZoomAnimation();
+    if (prefersReducedMotion()) {
+      this.view.set(target);
+      return;
+    }
+    const start = this.view();
+    const startedAt = performance.now();
+    const step = (now: number) => {
+      const progress = easeOutQuart(Math.min(1, (now - startedAt) / ZOOM_ANIMATION_MS));
+      this.view.set({
+        x: start.x + (target.x - start.x) * progress,
+        y: start.y + (target.y - start.y) * progress,
+        size: start.size + (target.size - start.size) * progress,
+      });
+      this.zoomFrame = progress < 1 ? requestAnimationFrame(step) : undefined;
+    };
+    this.zoomFrame = requestAnimationFrame(step);
+  }
+
+  private stopZoomAnimation(): void {
+    if (this.zoomFrame !== undefined) cancelAnimationFrame(this.zoomFrame);
+    this.zoomFrame = undefined;
   }
 
   private recordThrow(playerIndex: number, point: BoardPoint): void {
