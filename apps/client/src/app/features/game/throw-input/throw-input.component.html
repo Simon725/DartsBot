@@ -122,12 +122,12 @@
         <span class="total-label">Turn total</span>
         <input
           #totalInputEl
-          type="number"
-          min="0"
-          max="180"
+          type="text"
           inputmode="numeric"
-          [ngModel]="totalScore()"
-          (ngModelChange)="totalScore.set($event)"
+          pattern="[0-9]*"
+          autocomplete="off"
+          [value]="totalScore() ?? ''"
+          (input)="onTotalInput(totalInputEl)"
           (keydown.enter)="submitTotal()"
           [disabled]="disabled()"
           placeholder="0–180"

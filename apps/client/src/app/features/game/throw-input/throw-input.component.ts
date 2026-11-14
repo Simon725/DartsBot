@@ -10,7 +10,6 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { SpotlightDirective } from '../../../shared/spotlight.directive';
 import {
   IMPOSSIBLE_TURN_TOTALS,
@@ -43,7 +42,7 @@ const MULTIPLIER_KEYS: Readonly<Record<string, 1 | 2 | 3>> = { s: 1, d: 2, t: 3 
 @Component({
   selector: 'app-throw-input',
   standalone: true,
-  imports: [FormsModule, SpotlightDirective],
+  imports: [SpotlightDirective],
   templateUrl: './throw-input.component.html',
   styleUrl: './throw-input.component.css',
   host: { '(document:keydown)': 'onDocumentKeydown($event)' },
@@ -468,6 +467,13 @@ export class ThrowInputComponent {
     this.throwSubmitted.emit({ segment: 0, multiplier: 1, score: 0, isValid: true });
     this.vibrateOnCommit();
     this.selectedMultiplier.set(1);
+  }
+
+  /** Keeps the turn-total field digits-only: strips anything typed, pasted or dropped that isn't 0–9. */
+  onTotalInput(el: HTMLInputElement): void {
+    const digits = el.value.replace(/\D/g, '').slice(0, 3);
+    if (el.value !== digits) el.value = digits;
+    this.totalScore.set(digits === '' ? null : Number(digits));
   }
 
   submitTotal(): void {
